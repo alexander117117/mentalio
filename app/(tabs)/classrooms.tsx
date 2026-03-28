@@ -1,19 +1,202 @@
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import {
+  View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput,
+  Modal, Animated, Image, Pressable,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import ClassroomCard from '../../src/components/common/ClassroomCard';
-import { MOCK_CLASSROOMS } from '../../src/utils/mockData';
+import { useClassroomStore } from '../../src/store/classroomStore';
 
 type Segment = 'mine' | 'discover';
 
+// Попробуем загрузить иллюстрацию — если файла нет, покажем заглушку
+let illustration: number | null = null;
+try {
+  illustration = require('../../assets/images/classroom-illustration.png');
+} catch {}
+
+const SHEET_HEIGHT = 480;
+
+function CreateClassroomModal({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      // небольшая задержка чтобы компонент успел отрендериться
+      requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+          Animated.spring(translateY, {
+            toValue: 0,
+            damping: 16,
+            stiffness: 200,
+            mass: 0.8,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+    } else {
+      Animated.parallel([
+        Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: SHEET_HEIGHT, duration: 200, useNativeDriver: true }),
+      ]).start(() => setMounted(false));
+    }
+  }, [visible]);
+
+  if (!mounted) return null;
+
+  return (
+    <Modal visible transparent animationType="none" onRequestClose={onClose}>
+      {/* Backdrop */}
+      <Animated.View style={[modalStyles.backdrop, { opacity }]}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
+      </Animated.View>
+
+      {/* Sheet */}
+      <Animated.View style={[modalStyles.sheet, { transform: [{ translateY }] }]}>
+        {/* Close button */}
+        <TouchableOpacity style={modalStyles.closeBtn} onPress={onClose}>
+          <Ionicons name="close" size={20} color={Colors.text.secondary} />
+        </TouchableOpacity>
+
+        {/* Illustration */}
+        <View style={modalStyles.illustrationWrap}>
+          {illustration ? (
+            <Image source={illustration} style={modalStyles.illustration} resizeMode="contain" />
+          ) : (
+            <View style={modalStyles.illustrationPlaceholder}>
+              <Ionicons name="school-outline" size={72} color={Colors.text.disabled} />
+            </View>
+          )}
+        </View>
+
+        {/* Text */}
+        <Text style={modalStyles.title}>Создайте классную комнату</Text>
+        <Text style={modalStyles.subtitle}>
+          Добавляйте курсы, уроки, материалы и тесты. Принимайте студентов бесплатно или платно.
+        </Text>
+
+        {/* CTA */}
+        <TouchableOpacity
+          style={modalStyles.createBtn}
+          onPress={() => {
+            onClose();
+            setTimeout(() => router.push('/classroom/create' as any), 250);
+          }}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="add" size={20} color={Colors.text.inverse} />
+          <Text style={modalStyles.createBtnText}>Создать классную комнату</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    </Modal>
+  );
+}
+
+const modalStyles = StyleSheet.create({
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  sheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: 44,
+    paddingTop: Spacing.lg,
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: Spacing.md,
+    right: Spacing.md,
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.surfaceSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  illustrationWrap: {
+    width: 200,
+    height: 180,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  illustration: {
+    width: '100%',
+    height: '100%',
+  },
+  illustrationPlaceholder: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.lg,
+  },
+  title: {
+    ...Typography.h2,
+    color: Colors.text.primary,
+    textAlign: 'center',
+  },
+  subtitle: {
+    ...Typography.body,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: Spacing.sm,
+  },
+  createBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 16,
+    paddingHorizontal: Spacing.xl,
+    marginTop: Spacing.sm,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  createBtnText: {
+    ...Typography.body,
+    fontWeight: '700',
+    color: Colors.text.inverse,
+  },
+});
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
+
 export default function ClassroomsScreen() {
+  const classrooms = useClassroomStore((s) => s.classrooms);
   const [segment, setSegment] = useState<Segment>('mine');
   const [search, setSearch] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const data = MOCK_CLASSROOMS.filter((c) => {
+  const data = classrooms.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     const matchesSegment = segment === 'mine' ? c.isEnrolled : c.isPublic;
     return matchesSearch && matchesSegment;
@@ -25,7 +208,7 @@ export default function ClassroomsScreen() {
         <Text style={styles.title}>Классные комнаты</Text>
         <TouchableOpacity
           style={styles.addBtn}
-          onPress={() => router.push('/classroom/create' as any)}
+          onPress={() => setModalVisible(true)}
         >
           <Ionicons name="add" size={20} color={Colors.text.primary} />
         </TouchableOpacity>
@@ -75,6 +258,11 @@ export default function ClassroomsScreen() {
             </Text>
           </View>
         }
+      />
+
+      <CreateClassroomModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
       />
     </SafeAreaView>
   );

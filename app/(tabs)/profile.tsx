@@ -1,100 +1,171 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import Avatar from '../../src/components/ui/Avatar';
-import { MOCK_USERS } from '../../src/utils/mockData';
+import { MOCK_USERS, MOCK_COMMUNITIES, MOCK_POSTS } from '../../src/utils/mockData';
+import { useClassroomStore } from '../../src/store/classroomStore';
 
 const user = MOCK_USERS[0];
+const myCommunities = MOCK_COMMUNITIES.filter((c) => c.isMember);
+const myPosts = MOCK_POSTS.filter((p) => p.author.id === user.id);
 
-const MENU_SECTIONS = [
-  {
-    title: 'Контент',
-    items: [
-      { icon: 'document-text-outline', label: 'Мои публикации', value: '12' },
-      { icon: 'people-outline', label: 'Мои сообщества', value: '3' },
-      { icon: 'school-outline', label: 'Мои классы', value: '2' },
-      { icon: 'radio-outline', label: 'Мои эфиры', value: '1' },
-    ],
-  },
-  {
-    title: 'Прочее',
-    items: [
-      { icon: 'chatbubble-outline', label: 'Сообщения' },
-      { icon: 'bookmark-outline', label: 'Сохранённое' },
-      { icon: 'settings-outline', label: 'Настройки' },
-    ],
-  },
+const ACTIVITY = [
+  { icon: 'time-outline',    label: 'Часов обучения',    value: '47' },
+  { icon: 'checkmark-circle-outline', label: 'Уроков пройдено', value: '23' },
+  { icon: 'trophy-outline',  label: 'Курсов завершено',  value: '2'  },
+  { icon: 'flame-outline',   label: 'Дней подряд',       value: '12' },
 ];
 
 export default function ProfileScreen() {
+  const classrooms = useClassroomStore((s) => s.classrooms);
+  const enrolledClassrooms = classrooms.filter((c) => c.isEnrolled);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Профиль</Text>
-        <TouchableOpacity style={styles.settingsBtn}>
-          <Ionicons name="ellipsis-horizontal" size={20} color={Colors.text.secondary} />
+        <TouchableOpacity
+          style={styles.settingsBtn}
+          onPress={() => router.push('/profile/settings' as any)}
+        >
+          <Ionicons name="settings-outline" size={22} color={Colors.text.secondary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile info */}
-        <View style={styles.profileSection}>
-          <Avatar uri={user.avatar} name={user.name} size={72} />
-          <View style={styles.profileText}>
-            <Text style={styles.name}>{user.name}</Text>
-            <Text style={styles.email}>{user.email}</Text>
+        {/* Profile hero */}
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <Avatar uri={user.avatar} name={user.name} size={72} />
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={() => router.push('/profile/edit' as any)}
+            >
+              <Ionicons name="create-outline" size={16} color={Colors.text.primary} />
+              <Text style={styles.editBtnText}>Редактировать</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.editBtn}>
-            <Text style={styles.editBtnText}>Редактировать</Text>
-          </TouchableOpacity>
+          <Text style={styles.name}>{user.name}</Text>
+          <Text style={styles.email}>{user.email}</Text>
+          <Text style={styles.bio}>Учусь, создаю, делюсь знаниями 🚀</Text>
         </View>
 
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          {[
-            { label: 'Постов', value: '12' },
-            { label: 'Сообществ', value: '3' },
-            { label: 'Курсов', value: '2' },
-          ].map((s, i) => (
-            <View key={i} style={[styles.stat, i < 2 && styles.statBorder]}>
-              <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
+        {/* Activity stats */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Активность</Text>
+          <View style={styles.activityGrid}>
+            {ACTIVITY.map((a) => (
+              <View key={a.label} style={styles.activityCard}>
+                <Ionicons name={a.icon as any} size={22} color={Colors.primary} />
+                <Text style={styles.activityValue}>{a.value}</Text>
+                <Text style={styles.activityLabel}>{a.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Enrolled courses */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Мои курсы</Text>
+            <Text style={styles.sectionCount}>{enrolledClassrooms.length}</Text>
+          </View>
+          {enrolledClassrooms.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>Вы не записаны ни на один курс</Text>
             </View>
-          ))}
-        </View>
-
-        {/* Menu sections */}
-        {MENU_SECTIONS.map((section) => (
-          <View key={section.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <View style={styles.menuCard}>
-              {section.items.map((item, idx) => (
+          ) : (
+            <View style={styles.courseList}>
+              {enrolledClassrooms.map((c) => (
                 <TouchableOpacity
-                  key={idx}
-                  style={[styles.menuItem, idx < section.items.length - 1 && styles.menuItemBorder]}
-                  activeOpacity={0.6}
+                  key={c.id}
+                  style={styles.courseRow}
+                  activeOpacity={0.7}
+                  onPress={() => router.push(`/classroom/${c.id}` as any)}
                 >
-                  <View style={styles.menuLeft}>
-                    <View style={styles.menuIconWrap}>
-                      <Ionicons name={item.icon as any} size={17} color={Colors.text.secondary} />
+                  <View style={styles.courseThumbnail}>
+                    {c.thumbnail
+                      ? <Image source={{ uri: c.thumbnail }} style={styles.courseThumbnailImg} />
+                      : <Ionicons name="school-outline" size={20} color={Colors.text.disabled} />
+                    }
+                  </View>
+                  <View style={styles.courseInfo}>
+                    <Text style={styles.courseName} numberOfLines={1}>{c.name}</Text>
+                    <Text style={styles.courseInstructor}>{c.instructor.name}</Text>
+                    {/* Progress bar mock */}
+                    <View style={styles.progressBar}>
+                      <View style={[styles.progressFill, { width: '40%' }]} />
                     </View>
-                    <Text style={styles.menuLabel}>{item.label}</Text>
                   </View>
-                  <View style={styles.menuRight}>
-                    {item.value && (
-                      <Text style={styles.menuValue}>{item.value}</Text>
-                    )}
-                    <Ionicons name="chevron-forward" size={14} color={Colors.text.disabled} />
-                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={Colors.text.disabled} />
                 </TouchableOpacity>
               ))}
             </View>
+          )}
+        </View>
+
+        {/* Communities */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Сообщества</Text>
+            <Text style={styles.sectionCount}>{myCommunities.length}</Text>
           </View>
-        ))}
+          {myCommunities.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>Вы не вступили ни в одно сообщество</Text>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communitiesRow}>
+              {myCommunities.map((c) => (
+                <TouchableOpacity
+                  key={c.id}
+                  style={styles.communityChip}
+                  activeOpacity={0.7}
+                  onPress={() => router.push(`/community/${c.id}` as any)}
+                >
+                  <Avatar uri={c.avatar} name={c.name} size={40} />
+                  <Text style={styles.communityName} numberOfLines={1}>{c.name}</Text>
+                  <Text style={styles.communityMembers}>{c.membersCount.toLocaleString()} чел.</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        {/* Recent posts */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Публикации</Text>
+            <Text style={styles.sectionCount}>{myPosts.length}</Text>
+          </View>
+          {myPosts.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>Нет публикаций</Text>
+            </View>
+          ) : (
+            <View style={styles.postList}>
+              {myPosts.map((p) => (
+                <View key={p.id} style={styles.postRow}>
+                  <Text style={styles.postTitle} numberOfLines={2}>{p.title ?? p.content}</Text>
+                  <View style={styles.postMeta}>
+                    <Ionicons name="heart-outline" size={13} color={Colors.text.disabled} />
+                    <Text style={styles.postMetaText}>{p.likesCount}</Text>
+                    <Ionicons name="chatbubble-outline" size={13} color={Colors.text.disabled} />
+                    <Text style={styles.postMetaText}>{p.commentsCount}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutBtn}>
+          <Ionicons name="log-out-outline" size={18} color={Colors.error} />
           <Text style={styles.logoutText}>Выйти из аккаунта</Text>
         </TouchableOpacity>
 
@@ -105,10 +176,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -119,141 +187,151 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  headerTitle: {
-    ...Typography.h2,
-    color: Colors.text.primary,
-  },
-  settingsBtn: {
-    padding: 4,
-  },
-  profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
+  headerTitle: { ...Typography.h2, color: Colors.text.primary },
+  settingsBtn: { padding: 4 },
+
+  // Hero
+  hero: {
     backgroundColor: Colors.surface,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.lg,
+    padding: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    gap: 4,
   },
-  profileText: {
-    flex: 1,
-  },
-  name: {
-    ...Typography.h3,
-    color: Colors.text.primary,
-  },
-  email: {
-    ...Typography.caption,
-    color: Colors.text.secondary,
-    marginTop: 2,
-  },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Spacing.sm },
   editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: Spacing.md,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     borderColor: Colors.border,
-    backgroundColor: Colors.surface,
   },
-  editBtnText: {
-    ...Typography.caption,
-    fontWeight: '500',
-    color: Colors.text.primary,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  stat: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-  },
-  statBorder: {
-    borderRightWidth: 1,
-    borderRightColor: Colors.border,
-  },
-  statValue: {
-    ...Typography.h2,
-    color: Colors.text.primary,
-  },
-  statLabel: {
-    ...Typography.small,
-    color: Colors.text.secondary,
-    marginTop: 2,
-  },
-  section: {
-    marginTop: Spacing.lg,
-    paddingHorizontal: Spacing.md,
-    gap: Spacing.xs,
-  },
-  sectionTitle: {
-    ...Typography.small,
+  editBtnText: { ...Typography.caption, fontWeight: '500', color: Colors.text.primary },
+  name: { ...Typography.h2, color: Colors.text.primary },
+  email: { ...Typography.caption, color: Colors.text.secondary },
+  bio: { ...Typography.body, color: Colors.text.secondary, marginTop: 4 },
+
+  // Sections
+  section: { paddingHorizontal: Spacing.md, marginTop: Spacing.lg, gap: Spacing.sm },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  sectionTitle: { ...Typography.h3, color: Colors.text.primary },
+  sectionCount: {
+    fontSize: 12,
     fontWeight: '600',
-    color: Colors.text.disabled,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    paddingLeft: 2,
+    color: Colors.text.secondary,
+    backgroundColor: Colors.surfaceSecondary,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.full,
   },
-  menuCard: {
+
+  // Activity
+  activityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  activityCard: {
+    flex: 1,
+    minWidth: '47%',
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.md,
+    gap: 4,
+    alignItems: 'center',
+  },
+  activityValue: { ...Typography.h2, color: Colors.text.primary },
+  activityLabel: { fontSize: 11, color: Colors.text.secondary, textAlign: 'center' },
+
+  // Courses
+  courseList: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
     overflow: 'hidden',
   },
-  menuItem: {
+  courseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 13,
-  },
-  menuItemBorder: {
+    padding: Spacing.md,
+    gap: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  menuLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  menuIconWrap: {
-    width: 30,
-    height: 30,
+  courseThumbnail: {
+    width: 44,
+    height: 44,
     borderRadius: BorderRadius.sm,
     backgroundColor: Colors.surfaceSecondary,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-  menuLabel: {
-    ...Typography.body,
-    color: Colors.text.primary,
-  },
-  menuRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  menuValue: {
-    ...Typography.caption,
-    color: Colors.text.secondary,
-  },
-  logoutBtn: {
-    marginHorizontal: Spacing.md,
-    marginTop: Spacing.lg,
-    paddingVertical: 13,
+  courseThumbnailImg: { width: '100%', height: '100%' },
+  courseInfo: { flex: 1, gap: 3 },
+  courseName: { ...Typography.body, fontWeight: '500', color: Colors.text.primary },
+  courseInstructor: { fontSize: 12, color: Colors.text.secondary },
+  progressBar: { height: 3, backgroundColor: Colors.surfaceSecondary, borderRadius: 2, overflow: 'hidden', marginTop: 4 },
+  progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 2 },
+
+  // Communities
+  communitiesRow: { gap: Spacing.sm, paddingBottom: 4 },
+  communityChip: {
+    backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
+    padding: Spacing.sm,
+    alignItems: 'center',
+    width: 90,
+    gap: 4,
+  },
+  communityName: { fontSize: 11, fontWeight: '600', color: Colors.text.primary, textAlign: 'center' },
+  communityMembers: { fontSize: 10, color: Colors.text.disabled },
+
+  // Posts
+  postList: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+  },
+  postRow: {
+    padding: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    gap: 6,
+  },
+  postTitle: { ...Typography.body, color: Colors.text.primary },
+  postMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  postMetaText: { fontSize: 12, color: Colors.text.disabled, marginRight: 8 },
+
+  // Empty
+  emptyCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.lg,
     alignItems: 'center',
   },
-  logoutText: {
-    ...Typography.body,
-    color: Colors.error,
-    fontWeight: '500',
+  emptyText: { ...Typography.body, color: Colors.text.secondary },
+
+  // Logout
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.lg,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
+  logoutText: { ...Typography.body, color: Colors.error, fontWeight: '500' },
 });

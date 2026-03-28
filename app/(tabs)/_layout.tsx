@@ -1,16 +1,18 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/theme';
+import { tapLight } from '../../src/utils/haptics';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TABS: { name: string; title: string; icon: IconName; activeIcon: IconName }[] = [
-  { name: 'index',       title: 'Лента',       icon: 'home-outline',   activeIcon: 'home'   },
-  { name: 'communities', title: 'Сообщества',  icon: 'people-outline', activeIcon: 'people' },
-  { name: 'classrooms',  title: 'Классы',      icon: 'school-outline', activeIcon: 'school' },
-  { name: 'live',        title: 'Эфиры',       icon: 'radio-outline',  activeIcon: 'radio'  },
-  { name: 'profile',     title: 'Профиль',     icon: 'person-outline', activeIcon: 'person' },
+  { name: 'index',         title: 'Главная',       icon: 'home-outline',          activeIcon: 'home'          },
+  { name: 'chats',         title: 'Чаты',          icon: 'chatbubble-outline',    activeIcon: 'chatbubble'    },
+  { name: 'notifications', title: 'Уведомления',   icon: 'notifications-outline', activeIcon: 'notifications' },
+  { name: 'profile',       title: 'Профиль',       icon: 'person-outline',        activeIcon: 'person'        },
 ];
+
+const HIDDEN = ['communities', 'classrooms', 'live', 'dashboard'];
 
 export default function TabLayout() {
   return (
@@ -47,7 +49,11 @@ export default function TabLayout() {
               />
             ),
           }}
+          listeners={{ tabPress: () => tapLight() }}
         />
+      ))}
+      {HIDDEN.map((name) => (
+        <Tabs.Screen key={name} name={name} options={{ href: null }} />
       ))}
     </Tabs>
   );

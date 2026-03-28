@@ -76,22 +76,44 @@ export interface Course {
   createdAt: string;
 }
 
-export interface Lesson {
-  id: string;
-  courseId: string;
-  title: string;
-  videoUrl: string;
-  duration: number;
-  materials: Material[];
-  order: number;
-  isCompleted?: boolean;
-}
-
 export interface Material {
   id: string;
   title: string;
   type: 'pdf' | 'link' | 'file';
   url: string;
+}
+
+export interface QuizOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface QuizQuestion {
+  id: string;
+  text: string;
+  type: 'single' | 'multiple'; // single — radio, multiple — checkbox
+  options: QuizOption[];
+}
+
+export interface Quiz {
+  id: string;
+  lessonId: string;
+  questions: QuizQuestion[];
+}
+
+export interface Lesson {
+  id: string;
+  courseId: string;
+  title: string;
+  videoUrl?: string;       // YouTube/Vimeo ссылка или прямая ссылка
+  videoLocalUri?: string;  // локальный файл с телефона
+  duration: number;
+  materials: Material[];
+  quiz?: Quiz;
+  order: number;
+  isCompleted?: boolean;
+  isDraft?: boolean;
 }
 
 // ─── Live Stream ─────────────────────────────────────────────────────────────
@@ -122,6 +144,9 @@ export type RootStackParamList = {
   'community/[id]': { id: string };
   'community/create': undefined;
   'classroom/[id]': { id: string };
+  'classroom/[id]/manage': { id: string };
+  'classroom/[id]/course/[courseId]/manage': { id: string; courseId: string };
+  'classroom/[id]/lesson/create': { id: string; courseId: string };
   'classroom/create': undefined;
   'live/[id]': { id: string };
   'live/create': undefined;
