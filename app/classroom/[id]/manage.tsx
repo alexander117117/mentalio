@@ -15,16 +15,16 @@ export default function ClassroomManageScreen() {
   const courses = useClassroomStore((s) => s.courses);
   const addCourse = useClassroomStore((s) => s.addCourse);
 
-  const classroom = classrooms.find((c) => c.id === id) ?? classrooms[0];
+  const classroom = classrooms.find((c) => c.id === id);
   const myCourses = courses.filter((c) => c.classroomId === id);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [courseTitle, setCourseTitle] = useState('');
   const [courseDesc, setCourseDesc] = useState('');
 
-  const handleAddCourse = () => {
+  const handleAddCourse = async () => {
     if (!courseTitle.trim()) return;
-    addCourse({ classroomId: id!, title: courseTitle.trim(), description: courseDesc.trim() });
+    await addCourse({ classroomId: id!, title: courseTitle.trim(), description: courseDesc.trim() });
     setCourseTitle('');
     setCourseDesc('');
     setModalVisible(false);

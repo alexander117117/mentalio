@@ -8,10 +8,12 @@ import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/t
 import Input from '../../src/components/ui/Input';
 import Button from '../../src/components/ui/Button';
 import { useClassroomStore } from '../../src/store/classroomStore';
+import { useAuthStore } from '../../src/store/authStore';
 import { tapMedium, notifySuccess } from '../../src/utils/haptics';
 
 export default function CreateClassroomScreen() {
   const addClassroom = useClassroomStore((s) => s.addClassroom);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [thumbnail, setThumbnail] = useState<string | undefined>();
@@ -35,16 +37,30 @@ export default function CreateClassroomScreen() {
     }
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Требуется аккаунт',
+        'Зарегистрируйтесь или войдите в аккаунт',
+        [
+          { text: 'Войти', onPress: () => router.push('/auth/login' as any) },
+          { text: 'Отмена', style: 'cancel' },
+        ]
+      );
+      return;
+    }
     if (!name.trim()) return;
     tapMedium();
     setLoading(true);
-    setTimeout(() => {
-      const newId = addClassroom({ name: name.trim(), description: description.trim(), thumbnail, isPublic });
-      setLoading(false);
+    try {
+      const newId = await addClassroom({ name: name.trim(), description: description.trim(), thumbnail, isPublic });
       notifySuccess();
       router.replace(`/classroom/${newId}/manage` as any);
-    }, 600);
+    } catch {
+      Alert.alert('Ошибка', 'Не удалось создать курс. Проверьте подключение.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

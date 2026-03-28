@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, router, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -19,11 +19,26 @@ const queryClient = new QueryClient({
 function AppInitializer() {
   const initialize = useAuthStore((s) => s.initialize);
   const fetchClassrooms = useClassroomStore((s) => s.fetchClassrooms);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const segments = useSegments();
 
   useEffect(() => {
     initialize();
-    fetchClassrooms();
   }, []);
+
+  useEffect(() => {
+    if (isLoading) return;
+    const inAuthGroup = segments[0] === 'auth';
+    if (!isAuthenticated && !inAuthGroup) {
+      router.replace('/auth/login' as any);
+    } else if (isAuthenticated && inAuthGroup) {
+      router.replace('/(tabs)' as any);
+      fetchClassrooms();
+    } else if (isAuthenticated) {
+      fetchClassrooms();
+    }
+  }, [isAuthenticated, isLoading]);
 
   return null;
 }
@@ -48,6 +63,9 @@ export default function RootLayout() {
             <Stack.Screen name="live/create" />
             <Stack.Screen name="auth/login" />
             <Stack.Screen name="auth/register" />
+            <Stack.Screen name="auth/verify-email" />
+            <Stack.Screen name="auth/onboarding" />
+            <Stack.Screen name="profile/edit" />
           </Stack>
           <StatusBar style="auto" />
         </SafeAreaProvider>

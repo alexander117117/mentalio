@@ -5,15 +5,16 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import CommunityCard from '../../src/components/common/CommunityCard';
-import { MOCK_COMMUNITIES } from '../../src/utils/mockData';
+import { useCommunityStore } from '../../src/store/communityStore';
 
 type Segment = 'mine' | 'discover';
 
 export default function CommunitiesScreen() {
+  const communities = useCommunityStore((s) => s.communities);
   const [segment, setSegment] = useState<Segment>('mine');
   const [search, setSearch] = useState('');
 
-  const data = MOCK_COMMUNITIES.filter((c) => {
+  const data = communities.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     const matchesSegment = segment === 'mine' ? c.isMember : !c.isPrivate;
     return matchesSearch && matchesSegment;

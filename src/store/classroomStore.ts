@@ -139,7 +139,7 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => ({
 
   addClassroom: async (data) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return '';
+    if (!user) throw new Error('unauthenticated');
     const { data: row, error } = await supabase
       .from('classrooms')
       .insert({
@@ -151,35 +151,37 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => ({
       })
       .select(`*, profiles(*)`)
       .single();
-    if (!error && row) {
-      const classroom = mapClassroom(row, user.id);
-      set({ classrooms: [{ ...classroom, isEnrolled: true }, ...get().classrooms] });
-      return row.id;
-    }
-    return '';
+    if (error) throw new Error(error.message);
+    const classroom = mapClassroom(row, user.id);
+    set({ classrooms: [{ ...classroom, isEnrolled: true }, ...get().classrooms] });
+    return row.id;
   },
 
   addCourse: async (data) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('unauthenticated');
     const { data: row, error } = await supabase
       .from('courses')
       .insert({ classroom_id: data.classroomId, title: data.title, description: data.description })
       .select()
       .single();
-    if (!error && row) {
-      set({
-        courses: [...get().courses, mapCourse(row)],
-        classrooms: get().classrooms.map((c) =>
-          c.id === data.classroomId ? { ...c, coursesCount: c.coursesCount + 1 } : c
-        ),
-      });
-      return row.id;
-    }
-    return '';
+    if (error) throw new Error(error.message);
+    set({
+      courses: [...get().courses, mapCourse(row)],
+      classrooms: get().classrooms.map((c) =>
+        c.id === data.classroomId ? { ...c, coursesCount: c.coursesCount + 1 } : c
+      ),
+    });
+    return row.id;
   },
 
   addLesson: async (data) => {
     const courseId = data.courseId;
     const order = get().lessons.filter((l) => l.courseId === courseId).length + 1;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('unauthenticated');
+
     const { data: lessonRow, error } = await supabase
       .from('lessons')
       .insert({
@@ -192,16 +194,14 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => ({
       })
       .select()
       .single();
-    if (error || !lessonRow) return '';
+    if (error || !lessonRow) throw new Error(error?.message ?? 'Failed to create lesson');
 
-    // Insert materials
     if (data.materials.length > 0) {
       await supabase.from('materials').insert(
         data.materials.map((m) => ({ lesson_id: lessonRow.id, title: m.title, type: m.type, url: m.url }))
       );
     }
 
-    // Insert quiz
     if (data.quiz) {
       for (const q of data.quiz.questions) {
         const { data: qRow } = await supabase
@@ -218,11 +218,7 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => ({
     }
 
     await get().fetchLessons(courseId);
-    await supabase
-      .from('courses')
-      .update({ lessons_count: order })
-      .eq('id', courseId);
-
+    await supabase.from('courses').update({ lessons_count: order }).eq('id', courseId);
     return lessonRow.id;
   },
 

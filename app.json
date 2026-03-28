@@ -14,7 +14,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mentalio.app"
+      "bundleIdentifier": "com.mentalio.app",
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -30,7 +31,8 @@
     },
     "scheme": "mentalio",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-apple-authentication"
     ]
   }
 }

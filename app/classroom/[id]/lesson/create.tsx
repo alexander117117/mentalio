@@ -175,19 +175,18 @@ export default function LessonCreateScreen() {
 
   // ── Save ───────────────────────────────────────────────────────────────────
 
-  const handleSave = (isDraft: boolean) => {
+  const handleSave = async (isDraft: boolean) => {
     if (!title.trim()) {
       Alert.alert('Укажите название урока');
       return;
     }
     isDraft ? tapLight() : tapMedium();
     setSaving(true);
-    setTimeout(() => {
-      addLesson({
+    try {
+      await addLesson({
         courseId: courseId!,
         title: title.trim(),
         videoUrl: videoMode === 'link' ? videoUrl.trim() : undefined,
-        videoLocalUri: videoMode === 'file' ? videoLocalUri : undefined,
         duration: 0,
         materials,
         quiz: quizEnabled && questions.length > 0
@@ -195,10 +194,13 @@ export default function LessonCreateScreen() {
           : undefined,
         isDraft,
       });
-      setSaving(false);
       notifySuccess();
       router.back();
-    }, 500);
+    } catch {
+      Alert.alert('Ошибка', 'Не удалось сохранить урок.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ─────────────────────────────────────────────────────────────────────────
