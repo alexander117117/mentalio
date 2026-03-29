@@ -7,19 +7,29 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { Colors, Spacing, Typography, BorderRadius } from '../../../../src/constants/theme';
 import MaterialItem from '../../../../src/components/common/MaterialItem';
 import Button from '../../../../src/components/ui/Button';
 import { useClassroomStore } from '../../../../src/store/classroomStore';
 import { QuizQuestion } from '../../../../src/types';
 
+const isExternalLink = (url: string) =>
+  /youtube\.com|youtu\.be|vimeo\.com/i.test(url);
+
 export default function LessonScreen() {
   const { id, lessonId } = useLocalSearchParams<{ id: string; lessonId: string }>();
   const lessons = useClassroomStore((s) => s.lessons);
-  const fetchLessons = useClassroomStore((s) => s.fetchLessons);
   const markLessonCompleted = useClassroomStore((s) => s.markLessonCompleted);
 
   const lesson = lessons.find((l) => l.id === lessonId);
+
+  // Inline player — только для прямых ссылок (не YouTube/Vimeo)
+  const inlineVideoUrl =
+    lesson?.videoUrl && !isExternalLink(lesson.videoUrl) ? lesson.videoUrl : null;
+  const player = useVideoPlayer(inlineVideoUrl, (p) => {
+    p.loop = false;
+  });
 
   // Quiz state
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string[]>>({});
@@ -118,18 +128,25 @@ export default function LessonScreen() {
       </View>
 
       {/* Video */}
-      {lesson.videoUrl ? (
+      {lesson.videoUrl && inlineVideoUrl ? (
+        <VideoView
+          player={player}
+          style={styles.video}
+          allowsFullscreen
+          allowsPictureInPicture
+        />
+      ) : lesson.videoUrl && isExternalLink(lesson.videoUrl) ? (
         <TouchableOpacity style={styles.videoCard} activeOpacity={0.85} onPress={openVideo}>
           <View style={styles.playBtn}>
             <Ionicons name="play" size={32} color={Colors.text.inverse} />
           </View>
           <Text style={styles.videoLabel}>Смотреть видео</Text>
-          <Text style={styles.videoSub}>Откроется в браузере или приложении</Text>
+          <Text style={styles.videoSub}>Откроется в YouTube / Vimeo</Text>
         </TouchableOpacity>
       ) : (
         <View style={[styles.videoCard, styles.videoCardEmpty]}>
           <Ionicons name="videocam-off-outline" size={32} color={Colors.text.disabled} />
-          <Text style={styles.videoSub}>Видео не добавлено</Text>
+          <Text style={[styles.videoSub, { color: Colors.text.disabled }]}>Видео не добавлено</Text>
         </View>
       )}
 
@@ -279,6 +296,11 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     marginHorizontal: Spacing.sm,
+  },
+  video: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    backgroundColor: '#000',
   },
   videoCard: {
     width: '100%',

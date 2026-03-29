@@ -12,6 +12,7 @@ import { Colors, Spacing, Typography, BorderRadius } from '../../../../src/const
 import { useClassroomStore } from '../../../../src/store/classroomStore';
 import { tapMedium, tapLight, notifySuccess } from '../../../../src/utils/haptics';
 import { Material, QuizQuestion, QuizOption } from '../../../../src/types';
+import { supabase } from '../../../../src/lib/supabase';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -183,10 +184,29 @@ export default function LessonCreateScreen() {
     isDraft ? tapLight() : tapMedium();
     setSaving(true);
     try {
+      let resolvedVideoUrl: string | undefined;
+
+      if (videoMode === 'link') {
+        resolvedVideoUrl = videoUrl.trim() || undefined;
+      } else if (videoLocalUri) {
+        // Upload video file to Supabase Storage
+        const ext = videoLocalUri.split('.').pop()?.toLowerCase().split('?')[0] ?? 'mp4';
+        const mime = ext === 'mov' ? 'video/quicktime' : `video/${ext}`;
+        const path = `${courseId}/${uid()}.${ext}`;
+        const formData = new FormData();
+        formData.append('file', { uri: videoLocalUri, name: `video.${ext}`, type: mime } as any);
+        const { error: uploadError } = await supabase.storage
+          .from('videos')
+          .upload(path, formData, { contentType: mime, upsert: false });
+        if (uploadError) throw new Error(`Ошибка загрузки видео: ${uploadError.message}`);
+        const { data: urlData } = supabase.storage.from('videos').getPublicUrl(path);
+        resolvedVideoUrl = urlData.publicUrl;
+      }
+
       await addLesson({
         courseId: courseId!,
         title: title.trim(),
-        videoUrl: videoMode === 'link' ? videoUrl.trim() : undefined,
+        videoUrl: resolvedVideoUrl,
         duration: 0,
         materials,
         quiz: quizEnabled && questions.length > 0
@@ -196,8 +216,8 @@ export default function LessonCreateScreen() {
       });
       notifySuccess();
       router.back();
-    } catch {
-      Alert.alert('Ошибка', 'Не удалось сохранить урок.');
+    } catch (e: any) {
+      Alert.alert('Ошибка', e?.message ?? 'Не удалось сохранить урок.');
     } finally {
       setSaving(false);
     }

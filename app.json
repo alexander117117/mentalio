@@ -32,7 +32,8 @@
     "scheme": "mentalio",
     "plugins": [
       "expo-router",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "expo-video"
     ]
   }
 }
