@@ -12,7 +12,7 @@ import { Colors, Spacing, Typography, BorderRadius } from '../../../../src/const
 import { useClassroomStore } from '../../../../src/store/classroomStore';
 import { tapMedium, tapLight, notifySuccess } from '../../../../src/utils/haptics';
 import { Material, QuizQuestion, QuizOption } from '../../../../src/types';
-import { supabase } from '../../../../src/lib/supabase';
+import { uploadVideoToR2 } from '../../../../src/lib/r2';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -189,18 +189,7 @@ export default function LessonCreateScreen() {
       if (videoMode === 'link') {
         resolvedVideoUrl = videoUrl.trim() || undefined;
       } else if (videoLocalUri) {
-        // Upload video file to Supabase Storage
-        const ext = videoLocalUri.split('.').pop()?.toLowerCase().split('?')[0] ?? 'mp4';
-        const mime = ext === 'mov' ? 'video/quicktime' : `video/${ext}`;
-        const path = `${courseId}/${uid()}.${ext}`;
-        const formData = new FormData();
-        formData.append('file', { uri: videoLocalUri, name: `video.${ext}`, type: mime } as any);
-        const { error: uploadError } = await supabase.storage
-          .from('videos')
-          .upload(path, formData, { contentType: mime, upsert: false });
-        if (uploadError) throw new Error(`Ошибка загрузки видео: ${uploadError.message}`);
-        const { data: urlData } = supabase.storage.from('videos').getPublicUrl(path);
-        resolvedVideoUrl = urlData.publicUrl;
+        resolvedVideoUrl = await uploadVideoToR2(videoLocalUri, courseId!);
       }
 
       await addLesson({
