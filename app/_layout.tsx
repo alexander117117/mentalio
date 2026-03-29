@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuthStore } from '../src/store/authStore';
 import { useClassroomStore } from '../src/store/classroomStore';
 
@@ -22,17 +22,30 @@ function AppInitializer() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
   const segments = useSegments();
+  const didRedirect = useRef(false);
 
   useEffect(() => {
     initialize();
+
+    // Safety timeout: if initialize() hangs, unblock after 3s
+    const timeout = setTimeout(() => {
+      useAuthStore.setState({ isLoading: false });
+    }, 3000);
+
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
     if (isLoading) return;
-    const inAuthGroup = segments[0] === 'auth';
-    if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/auth/login' as any);
+    if (didRedirect.current) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+    const inOnboarding = segments[0] === 'onboarding';
+    if (!isAuthenticated && !inAuthGroup && !inOnboarding) {
+      didRedirect.current = true;
+      router.replace('/login' as any);
     } else if (isAuthenticated && inAuthGroup) {
+      didRedirect.current = true;
       router.replace('/(tabs)' as any);
       fetchClassrooms();
     } else if (isAuthenticated) {
@@ -61,10 +74,7 @@ export default function RootLayout() {
             <Stack.Screen name="classroom/create" />
             <Stack.Screen name="live/[id]" />
             <Stack.Screen name="live/create" />
-            <Stack.Screen name="auth/login" />
-            <Stack.Screen name="auth/register" />
-            <Stack.Screen name="auth/verify-email" />
-            <Stack.Screen name="auth/onboarding" />
+            <Stack.Screen name="onboarding" />
             <Stack.Screen name="profile/edit" />
           </Stack>
           <StatusBar style="auto" />

@@ -21,21 +21,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: true,
 
   initialize: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      if (profile) {
-        set({
-          user: { id: profile.id, email: session.user.email!, name: profile.name, avatar: profile.avatar_url, bio: profile.bio, createdAt: profile.created_at },
-          isAuthenticated: true,
-        });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        if (profile) {
+          set({
+            user: { id: profile.id, email: session.user.email!, name: profile.name, avatar: profile.avatar_url, bio: profile.bio, createdAt: profile.created_at },
+            isAuthenticated: true,
+          });
+        }
       }
+    } catch {
+      // network error — treat as unauthenticated
+    } finally {
+      set({ isLoading: false });
     }
-    set({ isLoading: false });
 
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {

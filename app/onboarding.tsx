@@ -7,9 +7,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
-import { useAuthStore } from '../../src/store/authStore';
-import { notifySuccess, tapLight } from '../../src/utils/haptics';
+import { Colors, Spacing, Typography, BorderRadius } from '../src/constants/theme';
+import { useAuthStore } from '../src/store/authStore';
+import { notifySuccess, tapLight } from '../src/utils/haptics';
 
 export default function OnboardingScreen() {
   const { name: paramName } = useLocalSearchParams<{ name: string }>();

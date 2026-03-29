@@ -1,6 +1,6 @@
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -12,9 +12,10 @@ import { useAuthStore } from '../../src/store/authStore';
 import { supabase } from '../../src/lib/supabase';
 import { notifySuccess, tapLight } from '../../src/utils/haptics';
 
-export default function LoginScreen() {
-  const signIn = useAuthStore((s) => s.signIn);
+export default function RegisterScreen() {
+  const signUp = useAuthStore((s) => s.signUp);
 
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -22,18 +23,23 @@ export default function LoginScreen() {
   const [appleLoading, setAppleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password) return;
+  const isValid = name.trim().length > 0 && email.trim().length > 0 && password.length >= 6;
+
+  const handleRegister = async () => {
+    if (!isValid) return;
     tapLight();
     setError(null);
     setLoading(true);
-    const { error: err } = await signIn(email.trim().toLowerCase(), password);
+    const { error: err } = await signUp(email.trim().toLowerCase(), password, name.trim());
     setLoading(false);
     if (err) {
-      setError('Неверный email или пароль');
+      if (err.includes('already registered')) {
+        setError('Этот email уже зарегистрирован');
+      } else {
+        setError(err);
+      }
     } else {
-      notifySuccess();
-      router.replace('/(tabs)' as any);
+      router.replace({ pathname: '/verify-email' as any, params: { email: email.trim().toLowerCase(), name: name.trim() } });
     }
   };
 
@@ -85,8 +91,8 @@ export default function LoginScreen() {
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Добро пожаловать</Text>
-          <Text style={styles.subtitle}>Войдите, чтобы продолжить</Text>
+          <Text style={styles.title}>Создать аккаунт</Text>
+          <Text style={styles.subtitle}>Начните учиться и создавать курсы</Text>
 
           {/* Apple */}
           <TouchableOpacity
@@ -100,7 +106,7 @@ export default function LoginScreen() {
             ) : (
               <>
                 <Ionicons name="logo-apple" size={20} color="#fff" />
-                <Text style={styles.appleBtnText}>Войти через Apple</Text>
+                <Text style={styles.appleBtnText}>Продолжить с Apple</Text>
               </>
             )}
           </TouchableOpacity>
@@ -110,6 +116,23 @@ export default function LoginScreen() {
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>или</Text>
             <View style={styles.dividerLine} />
+          </View>
+
+          {/* Name */}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Имя</Text>
+            <View style={styles.inputWrap}>
+              <Ionicons name="person-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Ваше имя"
+                placeholderTextColor={Colors.text.disabled}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+            </View>
           </View>
 
           {/* Email */}
@@ -137,7 +160,7 @@ export default function LoginScreen() {
               <Ionicons name="lock-closed-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Введите пароль"
+                placeholder="Минимум 6 символов"
                 placeholderTextColor={Colors.text.disabled}
                 value={password}
                 onChangeText={setPassword}
@@ -148,6 +171,9 @@ export default function LoginScreen() {
                 <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={Colors.text.disabled} />
               </TouchableOpacity>
             </View>
+            {password.length > 0 && password.length < 6 && (
+              <Text style={styles.fieldHint}>Минимум 6 символов</Text>
+            )}
           </View>
 
           {/* Error */}
@@ -160,22 +186,28 @@ export default function LoginScreen() {
 
           {/* Submit */}
           <TouchableOpacity
-            style={[styles.submitBtn, (!email || !password || loading) && styles.submitBtnDisabled]}
-            onPress={handleLogin}
+            style={[styles.submitBtn, (!isValid || loading) && styles.submitBtnDisabled]}
+            onPress={handleRegister}
             activeOpacity={0.85}
-            disabled={!email || !password || loading}
+            disabled={!isValid || loading}
           >
             {loading
               ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={styles.submitBtnText}>Войти</Text>
+              : <Text style={styles.submitBtnText}>Зарегистрироваться</Text>
             }
           </TouchableOpacity>
 
-          {/* Switch to register */}
+          {/* Terms */}
+          <Text style={styles.terms}>
+            Регистрируясь, вы соглашаетесь с{' '}
+            <Text style={styles.termsLink}>условиями использования</Text>
+          </Text>
+
+          {/* Switch to login */}
           <View style={styles.switchRow}>
-            <Text style={styles.switchText}>Нет аккаунта?</Text>
-            <TouchableOpacity onPress={() => router.replace('/auth/register' as any)}>
-              <Text style={styles.switchLink}>Зарегистрироваться</Text>
+            <Text style={styles.switchText}>Уже есть аккаунт?</Text>
+            <TouchableOpacity onPress={() => router.replace('/login' as any)}>
+              <Text style={styles.switchLink}>Войти</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -236,6 +268,7 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: 8 },
   input: { flex: 1, ...Typography.body, color: Colors.text.primary, paddingVertical: 14, padding: 0 },
   eyeBtn: { padding: 4 },
+  fieldHint: { fontSize: 11, color: Colors.text.disabled },
 
   errorBox: {
     flexDirection: 'row',
@@ -255,13 +288,17 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     paddingVertical: 15,
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
     marginTop: Spacing.sm,
   },
   submitBtnDisabled: { opacity: 0.45 },
   submitBtnText: { fontSize: 16, fontWeight: '600', color: '#fff' },
 
+  terms: { fontSize: 12, color: Colors.text.disabled, textAlign: 'center', marginBottom: Spacing.lg, lineHeight: 18 },
+  termsLink: { color: Colors.text.secondary, textDecorationLine: 'underline' },
+
   switchRow: { flexDirection: 'row', justifyContent: 'center', gap: 6 },
   switchText: { ...Typography.body, color: Colors.text.secondary },
   switchLink: { ...Typography.body, color: Colors.primary, fontWeight: '600' },
+
 });

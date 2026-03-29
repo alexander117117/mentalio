@@ -65,7 +65,7 @@ export default function VerifyEmailScreen() {
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
     } else {
       notifySuccess();
-      router.replace({ pathname: '/auth/onboarding' as any, params: { name } });
+      router.replace({ pathname: '/onboarding' as any, params: { name } });
     }
   };
 
@@ -88,7 +88,7 @@ export default function VerifyEmailScreen() {
       >
         <View style={styles.inner}>
           {/* Back */}
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/auth/register' as any)}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/register' as any)}>
             <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
           </TouchableOpacity>
 
