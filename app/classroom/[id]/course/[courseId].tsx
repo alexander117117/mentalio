@@ -1,19 +1,31 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
+import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Typography } from '../../../../src/constants/theme';
 import LessonItem from '../../../../src/components/common/LessonItem';
-import { MOCK_COURSES, MOCK_LESSONS } from '../../../../src/utils/mockData';
 import { FlatList } from 'react-native';
+import { useClassroomStore } from '../../../../src/store/classroomStore';
 
 export default function CourseScreen() {
   const { id, courseId } = useLocalSearchParams<{ id: string; courseId: string }>();
-  const course = MOCK_COURSES.find((c) => c.id === courseId) ?? MOCK_COURSES[0];
-  const lessons = MOCK_LESSONS.filter((l) => l.courseId === (courseId ?? '1'));
+  const courses = useClassroomStore((s) => s.courses);
+  const lessons = useClassroomStore((s) => s.lessons);
+  const fetchLessons = useClassroomStore((s) => s.fetchLessons);
 
-  const completed = lessons.filter((l) => l.isCompleted).length;
-  const progress = lessons.length > 0 ? (completed / lessons.length) * 100 : 0;
+  const course = courses.find((c) => c.id === courseId);
+  // Students see only published lessons
+  const courseLessons = lessons
+    .filter((l) => l.courseId === courseId && !l.isDraft)
+    .sort((a, b) => a.order - b.order);
+
+  useEffect(() => {
+    if (courseId) fetchLessons(courseId);
+  }, [courseId]);
+
+  const completed = courseLessons.filter((l) => l.isCompleted).length;
+  const progress = courseLessons.length > 0 ? (completed / courseLessons.length) * 100 : 0;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -21,13 +33,13 @@ export default function CourseScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{course.title}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{course?.title ?? 'Курс'}</Text>
         <View style={{ width: 24 }} />
       </View>
 
       <View style={styles.progressSection}>
         <View style={styles.progressRow}>
-          <Text style={styles.progressText}>{completed} из {lessons.length} уроков</Text>
+          <Text style={styles.progressText}>{completed} из {courseLessons.length} уроков</Text>
           <Text style={styles.progressPercent}>{Math.round(progress)}%</Text>
         </View>
         <View style={styles.progressBar}>
@@ -36,7 +48,7 @@ export default function CourseScreen() {
       </View>
 
       <FlatList
-        data={lessons}
+        data={courseLessons}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <LessonItem

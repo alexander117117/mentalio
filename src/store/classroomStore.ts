@@ -101,7 +101,7 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => ({
     const { data: { user } } = await supabase.auth.getUser();
     const { data, error } = await supabase
       .from('classrooms')
-      .select(`*, profiles(*), classroom_enrollments(user_id)`)
+      .select(`*, profiles!classrooms_instructor_id_fkey(*), classroom_enrollments(user_id)`)
       .order('created_at', { ascending: false });
     if (!error && data) {
       set({ classrooms: data.map((r) => mapClassroom(r, user?.id)) });
@@ -122,18 +122,14 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => ({
   },
 
   fetchLessons: async (courseId) => {
-    const { data: { user } } = await supabase.auth.getUser();
     const { data, error } = await supabase
       .from('lessons')
       .select(`*, materials(*), quiz_questions(*, quiz_options(*)), lesson_completions(user_id)`)
       .eq('course_id', courseId)
       .order('lesson_order');
     if (!error && data) {
-      const filtered = data.filter((l) =>
-        !l.is_draft || l.lesson_completions?.some((c: any) => c.user_id === user?.id)
-      );
       const existing = get().lessons.filter((l) => l.courseId !== courseId);
-      set({ lessons: [...existing, ...filtered.map(mapLesson)] });
+      set({ lessons: [...existing, ...data.map(mapLesson)] });
     }
   },
 
@@ -149,7 +145,7 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => ({
         is_public: data.isPublic,
         instructor_id: user.id,
       })
-      .select(`*, profiles(*)`)
+      .select(`*, profiles!classrooms_instructor_id_fkey(*)`)
       .single();
     if (error) throw new Error(error.message);
     const classroom = mapClassroom(row, user.id);

@@ -1,11 +1,10 @@
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  Modal, TextInput, Alert, KeyboardAvoidingView, Platform,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Colors, Spacing, Typography, BorderRadius } from '../../../src/constants/theme';
 import { useClassroomStore } from '../../../src/store/classroomStore';
 
@@ -13,26 +12,60 @@ export default function ClassroomManageScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const classrooms = useClassroomStore((s) => s.classrooms);
   const courses = useClassroomStore((s) => s.courses);
+  const lessons = useClassroomStore((s) => s.lessons);
+  const fetchCourses = useClassroomStore((s) => s.fetchCourses);
+  const fetchLessons = useClassroomStore((s) => s.fetchLessons);
   const addCourse = useClassroomStore((s) => s.addCourse);
+  const [loading, setLoading] = useState(false);
 
   const classroom = classrooms.find((c) => c.id === id);
   const myCourses = courses.filter((c) => c.classroomId === id);
+  const myLessons = lessons.filter((l) => myCourses.some((c) => c.id === l.courseId))
+    .sort((a, b) => a.order - b.order);
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [courseTitle, setCourseTitle] = useState('');
-  const [courseDesc, setCourseDesc] = useState('');
+  useEffect(() => {
+    if (!id) return;
+    fetchCourses(id).then(() => {
+      const coursesForClass = useClassroomStore.getState().courses.filter((c) => c.classroomId === id);
+      coursesForClass.forEach((c) => fetchLessons(c.id));
+    });
+  }, [id]);
 
-  const handleAddCourse = async () => {
-    if (!courseTitle.trim()) return;
-    await addCourse({ classroomId: id!, title: courseTitle.trim(), description: courseDesc.trim() });
-    setCourseTitle('');
-    setCourseDesc('');
-    setModalVisible(false);
+  // Gets or creates a default course for this classroom, returns courseId
+  const getOrCreateCourse = async (): Promise<string> => {
+    if (myCourses.length > 0) return myCourses[0].id;
+    const courseId = await addCourse({
+      classroomId: id!,
+      title: classroom?.name ?? 'Основной',
+      description: '',
+    });
+    return courseId;
   };
+
+  const handleAddLesson = async () => {
+    setLoading(true);
+    try {
+      const courseId = await getOrCreateCourse();
+      router.push(`/classroom/${id}/lesson/create?courseId=${courseId}` as any);
+    } catch (e: any) {
+      Alert.alert('Ошибка', e?.message ?? 'Не удалось открыть создание урока');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!classroom) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
@@ -42,50 +75,80 @@ export default function ClassroomManageScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Classroom info */}
+        {/* Info */}
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
             <Ionicons name="book-outline" size={16} color={Colors.text.secondary} />
-            <Text style={styles.infoText}>{myCourses.length} курсов</Text>
+            <Text style={styles.infoText}>{myLessons.length} уроков</Text>
             <Ionicons name="people-outline" size={16} color={Colors.text.secondary} style={{ marginLeft: Spacing.md }} />
             <Text style={styles.infoText}>{classroom.studentsCount} студентов</Text>
           </View>
-          <Text style={styles.infoDesc}>{classroom.description}</Text>
+          {classroom.description ? (
+            <Text style={styles.infoDesc}>{classroom.description}</Text>
+          ) : null}
         </View>
 
-        {/* Section: Courses */}
+        {/* Lessons */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Курсы</Text>
-            <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
-              <Ionicons name="add" size={18} color={Colors.text.primary} />
-              <Text style={styles.addBtnText}>Добавить курс</Text>
+            <Text style={styles.sectionTitle}>Уроки</Text>
+            <TouchableOpacity style={styles.addBtn} onPress={handleAddLesson} disabled={loading}>
+              {loading
+                ? <ActivityIndicator size="small" color={Colors.text.primary} />
+                : <Ionicons name="add" size={18} color={Colors.text.primary} />
+              }
+              <Text style={styles.addBtnText}>Добавить урок</Text>
             </TouchableOpacity>
           </View>
 
-          {myCourses.length === 0 ? (
-            <TouchableOpacity style={styles.emptyCard} onPress={() => setModalVisible(true)}>
+          {myLessons.length === 0 ? (
+            <TouchableOpacity style={styles.emptyCard} onPress={handleAddLesson} disabled={loading}>
               <Ionicons name="add-circle-outline" size={36} color={Colors.text.disabled} />
-              <Text style={styles.emptyTitle}>Добавьте первый курс</Text>
-              <Text style={styles.emptySubtitle}>Курс — это раздел или модуль вашей классной комнаты</Text>
+              <Text style={styles.emptyTitle}>Добавьте первый урок</Text>
+              <Text style={styles.emptySubtitle}>Добавьте видео, материалы и тест</Text>
             </TouchableOpacity>
           ) : (
-            <View style={styles.courseList}>
-              {myCourses.map((course, index) => (
+            <View style={styles.lessonList}>
+              {myLessons.map((lesson, index) => (
                 <TouchableOpacity
-                  key={course.id}
-                  style={styles.courseCard}
+                  key={lesson.id}
+                  style={styles.lessonCard}
                   activeOpacity={0.7}
-                  onPress={() => router.push(`/classroom/${id}/course/${course.id}/manage` as any)}
+                  onPress={() => {
+                    const courseId = myCourses.find((c) => c.id === lesson.courseId)?.id ?? myCourses[0]?.id;
+                    router.push(`/classroom/${id}/lesson/create?courseId=${courseId}&lessonId=${lesson.id}` as any);
+                  }}
                 >
-                  <View style={styles.courseIndex}>
-                    <Text style={styles.courseIndexText}>{index + 1}</Text>
+                  <View style={styles.lessonIndex}>
+                    <Text style={styles.lessonIndexText}>{index + 1}</Text>
                   </View>
-                  <View style={styles.courseInfo}>
-                    <Text style={styles.courseTitle}>{course.title}</Text>
-                    <Text style={styles.courseMeta}>
-                      {course.lessonsCount} {course.lessonsCount === 1 ? 'урок' : 'уроков'}
-                    </Text>
+                  <View style={styles.lessonInfo}>
+                    <Text style={styles.lessonTitle}>{lesson.title}</Text>
+                    <View style={styles.lessonBadges}>
+                      {lesson.videoUrl && (
+                        <View style={styles.badge}>
+                          <Ionicons name="play-circle-outline" size={12} color={Colors.text.secondary} />
+                          <Text style={styles.badgeText}>Видео</Text>
+                        </View>
+                      )}
+                      {lesson.materials.length > 0 && (
+                        <View style={styles.badge}>
+                          <Ionicons name="attach-outline" size={12} color={Colors.text.secondary} />
+                          <Text style={styles.badgeText}>{lesson.materials.length} файлов</Text>
+                        </View>
+                      )}
+                      {lesson.quiz && (
+                        <View style={styles.badge}>
+                          <Ionicons name="checkmark-circle-outline" size={12} color={Colors.text.secondary} />
+                          <Text style={styles.badgeText}>Тест</Text>
+                        </View>
+                      )}
+                      {lesson.isDraft && (
+                        <View style={[styles.badge, styles.badgeDraft]}>
+                          <Text style={styles.badgeDraftText}>Черновик</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={Colors.text.disabled} />
                 </TouchableOpacity>
@@ -94,56 +157,13 @@ export default function ClassroomManageScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* Modal: add course */}
-      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-        <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setModalVisible(false)} />
-        <View style={styles.modalSheet}>
-          <View style={styles.modalHandle} />
-          <Text style={styles.modalTitle}>Новый курс</Text>
-
-          <Text style={styles.inputLabel}>Название</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Например: Основы React Native"
-            placeholderTextColor={Colors.text.disabled}
-            value={courseTitle}
-            onChangeText={setCourseTitle}
-            autoFocus
-          />
-
-          <Text style={styles.inputLabel}>Описание (опционально)</Text>
-          <TextInput
-            style={[styles.textInput, styles.textArea]}
-            placeholder="Что студенты узнают в этом курсе?"
-            placeholderTextColor={Colors.text.disabled}
-            value={courseDesc}
-            onChangeText={setCourseDesc}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
-
-          <TouchableOpacity
-            style={[styles.createBtn, !courseTitle.trim() && styles.createBtnDisabled]}
-            onPress={handleAddCourse}
-            disabled={!courseTitle.trim()}
-          >
-            <Text style={styles.createBtnText}>Создать курс</Text>
-          </TouchableOpacity>
-        </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -200,14 +220,14 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { ...Typography.body, fontWeight: '600', color: Colors.text.primary },
   emptySubtitle: { ...Typography.caption, color: Colors.text.secondary, textAlign: 'center' },
-  courseList: {
+  lessonList: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
     overflow: 'hidden',
   },
-  courseCard: {
+  lessonCard: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
@@ -216,7 +236,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
     gap: Spacing.md,
   },
-  courseIndex: {
+  lessonIndex: {
     width: 28,
     height: 28,
     borderRadius: BorderRadius.sm,
@@ -224,48 +244,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  courseIndexText: { ...Typography.caption, fontWeight: '700', color: Colors.text.primary },
-  courseInfo: { flex: 1 },
-  courseTitle: { ...Typography.body, fontWeight: '500', color: Colors.text.primary },
-  courseMeta: { ...Typography.caption, color: Colors.text.secondary, marginTop: 2 },
-  // Modal
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
-  modalSheet: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: Spacing.lg,
-    gap: Spacing.sm,
-    paddingBottom: 40,
-  },
-  modalHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.border,
-    alignSelf: 'center',
-    marginBottom: Spacing.sm,
-  },
-  modalTitle: { ...Typography.h3, color: Colors.text.primary, marginBottom: Spacing.xs },
-  inputLabel: { ...Typography.caption, fontWeight: '600', color: Colors.text.secondary },
-  textInput: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 12,
-    ...Typography.body,
-    color: Colors.text.primary,
-    backgroundColor: Colors.background,
-  },
-  textArea: { minHeight: 80, textAlignVertical: 'top' },
-  createBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.md,
-    paddingVertical: 14,
+  lessonIndexText: { ...Typography.caption, fontWeight: '700', color: Colors.text.primary },
+  lessonInfo: { flex: 1, gap: 4 },
+  lessonTitle: { ...Typography.body, fontWeight: '500', color: Colors.text.primary },
+  lessonBadges: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  badge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.sm,
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.xs,
+    backgroundColor: Colors.surfaceSecondary,
   },
-  createBtnDisabled: { opacity: 0.4 },
-  createBtnText: { ...Typography.body, fontWeight: '600', color: Colors.text.inverse },
+  badgeText: { fontSize: 11, color: Colors.text.secondary },
+  badgeDraft: { backgroundColor: Colors.warningSurface },
+  badgeDraftText: { fontSize: 11, color: Colors.warning, fontWeight: '600' },
 });

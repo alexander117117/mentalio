@@ -95,31 +95,46 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Upload avatar to Supabase Storage if a local URI is provided
     if (data.avatar !== undefined) {
       if (data.avatar && (data.avatar.startsWith('file://') || data.avatar.startsWith('content://'))) {
-        try {
-          const res = await fetch(data.avatar);
-          const arrayBuffer = await res.arrayBuffer();
-          const ext = data.avatar.split('.').pop()?.toLowerCase().split('?')[0] ?? 'jpg';
-          const path = `${user.id}.${ext}`;
-          const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(path, arrayBuffer, { contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`, upsert: true });
-          if (!uploadError) {
-            const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-            updates.avatar_url = urlData.publicUrl;
-            data = { ...data, avatar: urlData.publicUrl };
-          }
-        } catch {
-          // Storage not configured — skip avatar upload
+        const ext = data.avatar.split('.').pop()?.toLowerCase().split('?')[0] ?? 'jpg';
+        const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+        const path = `${user.id}.${ext}`;
+        const formData = new FormData();
+        formData.append('file', { uri: data.avatar, name: `avatar.${ext}`, type: mime } as any);
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(path, formData, { contentType: mime, upsert: true });
+        if (uploadError) {
+          return { error: `Ошибка загрузки фото: ${uploadError.message}` };
         }
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+        updates.avatar_url = urlData.publicUrl;
       } else {
         updates.avatar_url = data.avatar;
       }
     }
 
+    // Write all updates to profiles table
     const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
-    if (!error) {
-      set({ user: { ...user, ...data } });
+    if (error) return { error: error.message };
+
+    // Re-fetch profile to confirm saved data
+    const { data: profile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (!fetchError && profile) {
+      set({
+        user: {
+          ...user,
+          name: profile.name,
+          avatar: profile.avatar_url,
+          bio: profile.bio,
+        },
+      });
     }
-    return { error: error?.message ?? null };
+
+    return { error: null };
   },
 }));

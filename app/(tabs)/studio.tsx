@@ -11,8 +11,6 @@ import { Classroom } from '../../src/types';
 import { tapLight } from '../../src/utils/haptics';
 
 function ClassroomCard({ classroom }: { classroom: Classroom }) {
-  const courses = useClassroomStore((s) => s.courses.filter((c) => c.classroomId === classroom.id));
-
   return (
     <View style={styles.card}>
       <View style={styles.cardThumb}>
@@ -36,7 +34,7 @@ function ClassroomCard({ classroom }: { classroom: Classroom }) {
           </View>
           <View style={styles.stat}>
             <Ionicons name="book-outline" size={12} color={Colors.text.secondary} />
-            <Text style={styles.statText}>{courses.length} курсов</Text>
+            <Text style={styles.statText}>{classroom.coursesCount} курсов</Text>
           </View>
         </View>
 
@@ -74,7 +72,7 @@ export default function StudioScreen() {
         'Требуется аккаунт',
         'Зарегистрируйтесь или войдите в аккаунт',
         [
-          { text: 'Войти', onPress: () => router.push('/auth/login' as any) },
+          { text: 'Войти', onPress: () => router.push('/login' as any) },
           { text: 'Отмена', style: 'cancel' },
         ]
       );

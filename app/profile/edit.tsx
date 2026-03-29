@@ -1,13 +1,13 @@
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  View, Text, StyleSheet, TouchableOpacity, TextInput, Image,
   ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
-import Avatar from '../../src/components/ui/Avatar';
 import { useAuthStore } from '../../src/store/authStore';
 import { tapLight, notifySuccess } from '../../src/utils/haptics';
 
@@ -16,17 +16,41 @@ export default function EditProfileScreen() {
   const updateProfile = useAuthStore((s) => s.updateProfile);
 
   const [name, setName] = useState(user?.name ?? '');
+  const [bio, setBio] = useState(user?.bio ?? '');
+  const [avatar, setAvatar] = useState<string | null>(user?.avatar ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasChanges = name.trim() !== (user?.name ?? '');
+  const hasChanges =
+    name.trim() !== (user?.name ?? '') ||
+    bio.trim() !== (user?.bio ?? '') ||
+    avatar !== (user?.avatar ?? null);
+
+  const pickImage = async () => {
+    tapLight();
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setAvatar(result.assets[0].uri);
+    }
+  };
 
   const handleSave = async () => {
     if (!name.trim()) return;
     tapLight();
     setLoading(true);
     setError(null);
-    const { error: err } = await updateProfile({ name: name.trim() });
+    const { error: err } = await updateProfile({
+      name: name.trim(),
+      bio: bio.trim(),
+      avatar: avatar ?? undefined,
+    });
     setLoading(false);
     if (err) {
       setError(err);
@@ -55,14 +79,35 @@ export default function EditProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+
           {/* Avatar */}
           <View style={styles.avatarSection}>
-            <Avatar uri={user?.avatar} name={user?.name ?? ''} size={80} />
+            <TouchableOpacity style={styles.avatarWrap} onPress={pickImage} activeOpacity={0.8}>
+              {avatar ? (
+                <>
+                  <Image source={{ uri: avatar }} style={styles.avatarImg} />
+                  <View style={styles.avatarOverlay}>
+                    <Ionicons name="camera" size={20} color="#fff" />
+                  </View>
+                </>
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarInitial}>
+                    {name.charAt(0).toUpperCase() || '?'}
+                  </Text>
+                  <View style={styles.cameraBtn}>
+                    <Ionicons name="camera" size={13} color="#fff" />
+                  </View>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={pickImage} style={styles.changePhotoBtn}>
+              <Text style={styles.changePhotoText}>
+                {avatar ? 'Изменить фото' : 'Добавить фото'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Fields */}
@@ -80,6 +125,21 @@ export default function EditProfileScreen() {
             </View>
 
             <View style={styles.field}>
+              <Text style={styles.fieldLabel}>О себе</Text>
+              <TextInput
+                style={[styles.input, styles.bioInput]}
+                value={bio}
+                onChangeText={setBio}
+                placeholder="Чем вы занимаетесь? Что изучаете или преподаёте?"
+                placeholderTextColor={Colors.text.disabled}
+                multiline
+                maxLength={200}
+                textAlignVertical="top"
+              />
+              <Text style={styles.charCount}>{bio.length}/200</Text>
+            </View>
+
+            <View style={styles.field}>
               <Text style={styles.fieldLabel}>Email</Text>
               <View style={styles.inputDisabled}>
                 <Text style={styles.inputDisabledText}>{user?.email}</Text>
@@ -94,11 +154,15 @@ export default function EditProfileScreen() {
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
+
+          <View style={{ height: Spacing.xl }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
+
+const AVATAR_SIZE = 88;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
@@ -131,7 +195,53 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    gap: Spacing.sm,
   },
+  avatarWrap: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+  },
+  avatarImg: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    inset: 0,
+    borderRadius: AVATAR_SIZE / 2,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarPlaceholder: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    backgroundColor: Colors.surfaceSecondary,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: { fontSize: 32, fontWeight: '700', color: Colors.text.disabled },
+  cameraBtn: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.surface,
+  },
+  changePhotoBtn: { paddingVertical: 4 },
+  changePhotoText: { fontSize: 14, color: Colors.primary, fontWeight: '500' },
 
   fields: { padding: Spacing.md, gap: Spacing.md },
   field: { gap: 6 },
@@ -146,6 +256,11 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.text.primary,
   },
+  bioInput: {
+    minHeight: 100,
+    lineHeight: 22,
+  },
+  charCount: { fontSize: 11, color: Colors.text.disabled, textAlign: 'right' },
   inputDisabled: {
     backgroundColor: Colors.surfaceSecondary,
     borderRadius: BorderRadius.md,
