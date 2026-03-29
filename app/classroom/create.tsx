@@ -27,7 +27,7 @@ export default function CreateClassroomScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,
@@ -43,7 +43,7 @@ export default function CreateClassroomScreen() {
         'Требуется аккаунт',
         'Зарегистрируйтесь или войдите в аккаунт',
         [
-          { text: 'Войти', onPress: () => router.push('/auth/login' as any) },
+          { text: 'Войти', onPress: () => router.push('/login' as any) },
           { text: 'Отмена', style: 'cancel' },
         ]
       );
@@ -56,8 +56,8 @@ export default function CreateClassroomScreen() {
       const newId = await addClassroom({ name: name.trim(), description: description.trim(), thumbnail, isPublic });
       notifySuccess();
       router.replace(`/classroom/${newId}/manage` as any);
-    } catch {
-      Alert.alert('Ошибка', 'Не удалось создать курс. Проверьте подключение.');
+    } catch (e: any) {
+      Alert.alert('Ошибка', e?.message ?? 'Не удалось создать курс. Проверьте подключение.');
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,7 @@ export default function CreateClassroomScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="close" size={24} color={Colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Новая классная комната</Text>
+        <Text style={styles.headerTitle}>Новый курс</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -95,13 +95,13 @@ export default function CreateClassroomScreen() {
 
         <Input
           label="Название"
-          placeholder="Название классной комнаты"
+          placeholder="Название курса"
           value={name}
           onChangeText={setName}
         />
         <Input
           label="Описание"
-          placeholder="Что изучают в этой классной комнате?"
+          placeholder="О чём этот курс?"
           value={description}
           onChangeText={setDescription}
           multiline
@@ -123,7 +123,7 @@ export default function CreateClassroomScreen() {
         </View>
 
         <Button
-          title="Создать классную комнату"
+          title="Создать курс"
           onPress={handleCreate}
           loading={loading}
           disabled={!name.trim()}

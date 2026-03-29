@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAuthStore } from '../src/store/authStore';
 import { useClassroomStore } from '../src/store/classroomStore';
 
@@ -22,30 +22,22 @@ function AppInitializer() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
   const segments = useSegments();
-  const didRedirect = useRef(false);
 
   useEffect(() => {
     initialize();
-
-    // Safety timeout: if initialize() hangs, unblock after 3s
     const timeout = setTimeout(() => {
       useAuthStore.setState({ isLoading: false });
     }, 3000);
-
     return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
     if (isLoading) return;
-    if (didRedirect.current) return;
-
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboarding = segments[0] === 'onboarding';
     if (!isAuthenticated && !inAuthGroup && !inOnboarding) {
-      didRedirect.current = true;
       router.replace('/login' as any);
     } else if (isAuthenticated && inAuthGroup) {
-      didRedirect.current = true;
       router.replace('/(tabs)' as any);
       fetchClassrooms();
     } else if (isAuthenticated) {

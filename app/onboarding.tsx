@@ -27,7 +27,7 @@ export default function OnboardingScreen() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') return;
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -41,13 +41,37 @@ export default function OnboardingScreen() {
   const handleSave = async () => {
     tapLight();
     setLoading(true);
-    await updateProfile({
-      avatar: avatar ?? undefined,
-      bio: bio.trim(),
-    });
-    setLoading(false);
-    notifySuccess();
-    router.replace('/(tabs)' as any);
+    try {
+      // Save bio immediately — fast, no upload needed
+      await updateProfile({ bio: bio.trim() });
+
+      // Upload avatar separately — skip if it fails
+      if (avatar) {
+        const ext = avatar.split('.').pop()?.toLowerCase().split('?')[0] ?? 'jpg';
+        const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+        const formData = new FormData();
+        formData.append('file', { uri: avatar, name: `avatar.${ext}`, type: mime } as any);
+
+        const { supabase } = await import('../src/lib/supabase');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const path = `${session.user.id}.${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(path, formData, { contentType: mime, upsert: true });
+          if (!uploadError) {
+            const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+            await updateProfile({ avatar: urlData.publicUrl });
+          }
+        }
+      }
+    } catch {
+      // proceed regardless
+    } finally {
+      setLoading(false);
+      notifySuccess();
+      router.replace('/(tabs)' as any);
+    }
   };
 
   const handleSkip = () => {

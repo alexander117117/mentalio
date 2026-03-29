@@ -8,16 +8,15 @@ import { router } from 'expo-router';
 import { useState, useRef } from 'react';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import { useClassroomStore } from '../../src/store/classroomStore';
-import { MOCK_USERS, MOCK_COMMUNITIES } from '../../src/utils/mockData';
+import { useAuthStore } from '../../src/store/authStore';
+import { useCommunityStore } from '../../src/store/communityStore';
 import { Classroom } from '../../src/types';
 import Avatar from '../../src/components/ui/Avatar';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.75;
 
-const currentUser = MOCK_USERS[0];
 const CATEGORIES = ['Все', 'Дизайн', 'Разработка', 'Маркетинг', 'Бизнес', 'Языки'];
-const myCommunities = MOCK_COMMUNITIES.filter((c) => c.isMember);
 
 function CourseCard({ classroom }: { classroom: Classroom }) {
   return (
@@ -89,6 +88,9 @@ const courseStyles = StyleSheet.create({
 
 export default function HomeScreen() {
   const classrooms = useClassroomStore((s) => s.classrooms);
+  const user = useAuthStore((s) => s.user);
+  const communities = useCommunityStore((s) => s.communities);
+  const myCommunities = communities.filter((c) => c.isMember);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('Все');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -156,7 +158,7 @@ export default function HomeScreen() {
           <Text style={styles.greeting}>Добро пожаловать 👋</Text>
           <Text style={styles.headerTitle}>Найдите курс</Text>
         </View>
-        <Avatar uri={currentUser.avatar} name={currentUser.name} size={38} />
+        <Avatar uri={user?.avatar} name={user?.name ?? ''} size={38} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
