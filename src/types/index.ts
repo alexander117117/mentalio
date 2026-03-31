@@ -117,6 +117,32 @@ export interface Lesson {
   isDraft?: boolean;
 }
 
+// ─── Chat ────────────────────────────────────────────────────────────────────
+
+export interface Chat {
+  id: string;
+  name: string;
+  classroomId?: string;
+  classroomThumbnail?: string;
+  createdBy: string;
+  createdAt: string;
+  lastMessage?: {
+    content: string;
+    createdAt: string;
+    userName: string;
+  };
+}
+
+export interface ChatMessage {
+  id: string;
+  chatId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  content: string;
+  createdAt: string;
+}
+
 // ─── Live Stream ─────────────────────────────────────────────────────────────
 
 export interface LiveStream {

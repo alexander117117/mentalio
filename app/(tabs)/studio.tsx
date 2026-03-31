@@ -4,7 +4,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
+import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../src/constants/theme';
 import { useClassroomStore } from '../../src/store/classroomStore';
 import { useAuthStore } from '../../src/store/authStore';
 import { Classroom } from '../../src/types';
@@ -20,7 +20,7 @@ function ClassroomCard({ classroom }: { classroom: Classroom }) {
               <Ionicons name="school-outline" size={28} color={Colors.text.disabled} />
             </View>
         }
-        <View style={[styles.visibilityBadge, classroom.isPublic ? styles.badgePublic : styles.badgePrivate]}>
+        <View style={styles.visibilityBadge}>
           <Text style={styles.visibilityText}>{classroom.isPublic ? 'Публичный' : 'Приватный'}</Text>
         </View>
       </View>
@@ -84,141 +84,157 @@ export default function StudioScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerSub}>Создание контента</Text>
-          <Text style={styles.headerTitle}>Мои курсы</Text>
+
+      {/* ── Top zone: plain background ── */}
+      <View style={styles.topZone}>
+        <View style={styles.topRow}>
+          <View>
+            <Text style={styles.topSub}>Создание контента</Text>
+            <Text style={styles.topTitle}>Мои курсы</Text>
+          </View>
+          <TouchableOpacity style={styles.createBtn} activeOpacity={0.8} onPress={handleCreate}>
+            <Ionicons name="add" size={18} color={Colors.text.inverse} />
+            <Text style={styles.createBtnText}>Создать</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.createBtn}
-          activeOpacity={0.8}
-          onPress={handleCreate}
-        >
-          <Ionicons name="add" size={20} color={Colors.text.inverse} />
-          <Text style={styles.createBtnText}>Создать</Text>
-        </TouchableOpacity>
+
+        {/* Stats strip — только когда есть курсы */}
+        {myClassrooms.length > 0 && (
+          <View style={styles.statsRow}>
+            <View style={styles.statChip}>
+              <Text style={styles.statChipValue}>{myClassrooms.length}</Text>
+              <Text style={styles.statChipLabel}>Курсов</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statChip}>
+              <Text style={styles.statChipValue}>
+                {myClassrooms.reduce((s, c) => s + c.studentsCount, 0)}
+              </Text>
+              <Text style={styles.statChipLabel}>Студентов</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statChip}>
+              <Text style={styles.statChipValue}>
+                {myClassrooms.reduce((s, c) => s + c.coursesCount, 0)}
+              </Text>
+              <Text style={styles.statChipLabel}>Разделов</Text>
+            </View>
+          </View>
+        )}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {myClassrooms.length === 0 ? (
-          <View style={styles.empty}>
-            <View style={styles.emptyIcon}>
-              <Ionicons name="school-outline" size={40} color={Colors.text.disabled} />
+      {/* ── White card sheet ── */}
+      <View style={styles.sheet}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
+          {myClassrooms.length === 0 ? (
+            <View style={styles.empty}>
+              <Image
+                source={require('../../assets/images/empty-courses.png')}
+                style={styles.emptyIllustration}
+                resizeMode="contain"
+              />
+              <Text style={styles.emptyTitle}>Нет курсов</Text>
+              <Text style={styles.emptySubtitle}>
+                Создайте первый курс и начните обучать студентов
+              </Text>
+              <TouchableOpacity style={styles.emptyBtn} activeOpacity={0.8} onPress={handleCreate}>
+                <Ionicons name="add" size={16} color={Colors.text.inverse} />
+                <Text style={styles.emptyBtnText}>Создать курс</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.emptyTitle}>Нет курсов</Text>
-            <Text style={styles.emptySubtitle}>Создайте первый курс и начните обучать студентов</Text>
-            <TouchableOpacity
-              style={styles.emptyBtn}
-              activeOpacity={0.8}
-              onPress={handleCreate}
-            >
-              <Ionicons name="add" size={16} color={Colors.text.inverse} />
-              <Text style={styles.emptyBtnText}>Создать курс</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <Text style={styles.statCardValue}>{myClassrooms.length}</Text>
-                <Text style={styles.statCardLabel}>Курсов</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statCardValue}>
-                  {myClassrooms.reduce((sum, c) => sum + c.studentsCount, 0)}
-                </Text>
-                <Text style={styles.statCardLabel}>Студентов</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statCardValue}>
-                  {myClassrooms.reduce((sum, c) => sum + c.coursesCount, 0)}
-                </Text>
-                <Text style={styles.statCardLabel}>Разделов</Text>
-              </View>
-            </View>
+          ) : (
+            myClassrooms.map((c) => <ClassroomCard key={c.id} classroom={c} />)
+          )}
+          <View style={{ height: 32 }} />
+        </ScrollView>
+      </View>
 
-            {myClassrooms.map((c) => (
-              <ClassroomCard key={c.id} classroom={c} />
-            ))}
-          </>
-        )}
-        <View style={{ height: Spacing.xl }} />
-      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: {
+
+  // Top zone
+  topZone: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: 20,
+    gap: 16,
+  },
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
-  headerSub: { fontSize: 11, color: Colors.text.disabled, textTransform: 'uppercase', letterSpacing: 0.5 },
-  headerTitle: { ...Typography.h2, color: Colors.text.primary, marginTop: 2 },
+  topSub: {
+    fontSize: 11,
+    color: Colors.text.disabled,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  topTitle: { fontSize: 26, fontWeight: '800', color: Colors.text.primary, marginTop: 2 },
   createBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.md,
-    paddingVertical: 9,
+    paddingVertical: 10,
     borderRadius: BorderRadius.md,
   },
   createBtnText: { fontSize: 14, fontWeight: '600', color: Colors.text.inverse },
 
-  content: { padding: Spacing.md, gap: Spacing.md },
+  // Stats strip
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 0,
+  },
+  statChip: { flex: 1, alignItems: 'center', gap: 2 },
+  statChipValue: { fontSize: 20, fontWeight: '700', color: Colors.text.primary },
+  statChipLabel: { fontSize: 11, color: Colors.text.secondary },
+  statDivider: { width: 1, height: 32, backgroundColor: Colors.border },
 
-  // Stats row
-  statsRow: { flexDirection: 'row', gap: Spacing.sm },
-  statCard: {
+  // White card sheet
+  sheet: {
     flex: 1,
     backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.md,
-    alignItems: 'center',
-    gap: 2,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    ...Shadows.sm,
   },
-  statCardValue: { ...Typography.h2, color: Colors.text.primary },
-  statCardLabel: { fontSize: 11, color: Colors.text.secondary },
+  sheetContent: {
+    padding: Spacing.md,
+    gap: Spacing.md,
+  },
 
   // Classroom card
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     borderWidth: 1,
     borderColor: Colors.border,
     overflow: 'hidden',
+    ...Shadows.sm,
   },
   cardThumb: { height: 140, backgroundColor: Colors.surfaceSecondary, position: 'relative' },
   cardThumbImg: { width: '100%', height: '100%' },
   cardThumbPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   visibilityBadge: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    top: 10, right: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 8, paddingVertical: 3,
     borderRadius: BorderRadius.full,
   },
-  badgePublic: { backgroundColor: 'rgba(0,0,0,0.55)' },
-  badgePrivate: { backgroundColor: 'rgba(0,0,0,0.55)' },
   visibilityText: { fontSize: 11, color: '#fff', fontWeight: '500' },
-
   cardBody: { padding: Spacing.md, gap: Spacing.sm },
   cardName: { ...Typography.body, fontWeight: '600', color: Colors.text.primary, lineHeight: 20 },
   cardStats: { flexDirection: 'row', gap: Spacing.md },
   stat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   statText: { fontSize: 12, color: Colors.text.secondary },
-
   cardActions: { flexDirection: 'row', gap: Spacing.sm, marginTop: 4 },
   manageBtn: {
     flex: 1,
@@ -244,28 +260,30 @@ const styles = StyleSheet.create({
   },
 
   // Empty state
-  empty: { alignItems: 'center', paddingTop: 60, gap: Spacing.md },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  empty: {
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: 32,
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.sm,
   },
+  emptyIllustration: { width: 220, height: 220, marginBottom: 4 },
   emptyTitle: { ...Typography.h3, color: Colors.text.primary },
-  emptySubtitle: { ...Typography.body, color: Colors.text.secondary, textAlign: 'center', maxWidth: 260 },
+  emptySubtitle: {
+    ...Typography.body,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    maxWidth: 260,
+  },
   emptyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: 12,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: 13,
     borderRadius: BorderRadius.md,
     marginTop: Spacing.sm,
   },
-  emptyBtnText: { fontSize: 14, fontWeight: '600', color: Colors.text.inverse },
+  emptyBtnText: { fontSize: 15, fontWeight: '700', color: Colors.text.inverse },
 });

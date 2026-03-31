@@ -26,6 +26,7 @@ interface ClassroomStore {
   updateLesson: (lessonId: string, data: Partial<Lesson>) => Promise<void>;
   markLessonCompleted: (lessonId: string) => Promise<void>;
   enrollClassroom: (classroomId: string) => Promise<void>;
+  deleteClassroom: (classroomId: string) => Promise<void>;
 }
 
 function mapClassroom(row: any, userId?: string): Classroom {
@@ -246,6 +247,15 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => ({
       classrooms: get().classrooms.map((c) =>
         c.id === classroomId ? { ...c, isEnrolled: true, studentsCount: c.studentsCount + 1 } : c
       ),
+    });
+  },
+
+  deleteClassroom: async (classroomId) => {
+    const { error } = await supabase.from('classrooms').delete().eq('id', classroomId);
+    if (error) throw new Error(error.message);
+    set({
+      classrooms: get().classrooms.filter((c) => c.id !== classroomId),
+      courses: get().courses.filter((c) => c.classroomId !== classroomId),
     });
   },
 }));

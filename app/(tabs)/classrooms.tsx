@@ -253,9 +253,21 @@ export default function ClassroomsScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>
-              {segment === 'mine' ? 'Вы не записаны ни на один курс' : 'Ничего не найдено'}
-            </Text>
+            {segment === 'mine' ? (
+              <>
+                <Image
+                  source={require('../../assets/images/empty-courses.png')}
+                  style={styles.emptyIllustration}
+                  resizeMode="contain"
+                />
+                <Text style={styles.emptyTitle}>Нет курсов</Text>
+                <Text style={styles.emptyText}>
+                  Создайте первый курс и начните обучать студентов
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.emptyText}>Ничего не найдено</Text>
+            )}
           </View>
         }
       />
@@ -358,12 +370,16 @@ const styles = StyleSheet.create({
   },
   empty: {
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 40,
     paddingHorizontal: Spacing.xl,
+    gap: 8,
   },
+  emptyIllustration: { width: 200, height: 200, marginBottom: 4 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
   emptyText: {
     ...Typography.body,
     color: Colors.text.secondary,
     textAlign: 'center',
+    lineHeight: 20,
   },
 });

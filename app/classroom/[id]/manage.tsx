@@ -1,12 +1,14 @@
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  ActivityIndicator, Alert, Modal, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { Colors, Spacing, Typography, BorderRadius } from '../../../src/constants/theme';
+import { useEffect, useRef, useState } from 'react';
+import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../../src/constants/theme';
 import { useClassroomStore } from '../../../src/store/classroomStore';
+import { useChatStore } from '../../../src/store/chatStore';
 
 export default function ClassroomManageScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -16,11 +18,24 @@ export default function ClassroomManageScreen() {
   const fetchCourses = useClassroomStore((s) => s.fetchCourses);
   const fetchLessons = useClassroomStore((s) => s.fetchLessons);
   const addCourse = useClassroomStore((s) => s.addCourse);
+  const deleteClassroom = useClassroomStore((s) => s.deleteClassroom);
+  const chats = useChatStore((s) => s.chats);
+  const fetchChats = useChatStore((s) => s.fetchChats);
+  const createChat = useChatStore((s) => s.createChat);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [creatingChat, setCreatingChat] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
+
+  const classroomChat = chats.find((c) => c.classroomId === id);
+
+  const scaleAnim = useRef(new Animated.Value(0.88)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
 
   const classroom = classrooms.find((c) => c.id === id);
   const myCourses = courses.filter((c) => c.classroomId === id);
-  const myLessons = lessons.filter((l) => myCourses.some((c) => c.id === l.courseId))
+  const myLessons = lessons
+    .filter((l) => myCourses.some((c) => c.id === l.courseId))
     .sort((a, b) => a.order - b.order);
 
   useEffect(() => {
@@ -29,17 +44,25 @@ export default function ClassroomManageScreen() {
       const coursesForClass = useClassroomStore.getState().courses.filter((c) => c.classroomId === id);
       coursesForClass.forEach((c) => fetchLessons(c.id));
     });
+    fetchChats();
   }, [id]);
 
-  // Gets or creates a default course for this classroom, returns courseId
+  const handleCreateChat = async () => {
+    if (!classroom) return;
+    setCreatingChat(true);
+    try {
+      const chatId = await createChat(classroom.name, id);
+      router.push(`/chat/${chatId}` as any);
+    } catch (e: any) {
+      Alert.alert('Ошибка', e?.message ?? 'Не удалось создать чат');
+    } finally {
+      setCreatingChat(false);
+    }
+  };
+
   const getOrCreateCourse = async (): Promise<string> => {
     if (myCourses.length > 0) return myCourses[0].id;
-    const courseId = await addCourse({
-      classroomId: id!,
-      title: classroom?.name ?? 'Основной',
-      description: '',
-    });
-    return courseId;
+    return addCourse({ classroomId: id!, title: classroom?.name ?? 'Основной', description: '' });
   };
 
   const handleAddLesson = async () => {
@@ -51,6 +74,33 @@ export default function ClassroomManageScreen() {
       Alert.alert('Ошибка', e?.message ?? 'Не удалось открыть создание урока');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const showConfirm = () => {
+    setConfirmVisible(true);
+    Animated.parallel([
+      Animated.spring(scaleAnim, { toValue: 1, damping: 18, stiffness: 260, useNativeDriver: true }),
+      Animated.timing(opacityAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const hideConfirm = () => {
+    Animated.parallel([
+      Animated.timing(scaleAnim, { toValue: 0.88, duration: 150, useNativeDriver: true }),
+      Animated.timing(opacityAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+    ]).start(() => setConfirmVisible(false));
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteClassroom(id!);
+      hideConfirm();
+      router.replace('/(tabs)/' as any);
+    } catch {
+      setDeleting(false);
+      Alert.alert('Ошибка', 'Не удалось удалить курс');
     }
   };
 
@@ -66,97 +116,186 @@ export default function ClassroomManageScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{classroom.name}</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 36 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Info */}
+        {/* Info card */}
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Ionicons name="book-outline" size={16} color={Colors.text.secondary} />
-            <Text style={styles.infoText}>{myLessons.length} уроков</Text>
-            <Ionicons name="people-outline" size={16} color={Colors.text.secondary} style={{ marginLeft: Spacing.md }} />
-            <Text style={styles.infoText}>{classroom.studentsCount} студентов</Text>
+            <View style={styles.infoStat}>
+              <Ionicons name="book-outline" size={15} color={Colors.primary} />
+              <Text style={styles.infoStatText}>{myLessons.length} уроков</Text>
+            </View>
+            <View style={styles.infoStat}>
+              <Ionicons name="people-outline" size={15} color={Colors.primary} />
+              <Text style={styles.infoStatText}>{classroom.studentsCount} студентов</Text>
+            </View>
           </View>
           {classroom.description ? (
             <Text style={styles.infoDesc}>{classroom.description}</Text>
           ) : null}
         </View>
 
-        {/* Lessons */}
+        {/* Lessons section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Уроки</Text>
-            <TouchableOpacity style={styles.addBtn} onPress={handleAddLesson} disabled={loading}>
+            <TouchableOpacity style={styles.addBtn} onPress={handleAddLesson} disabled={loading} activeOpacity={0.7}>
               {loading
                 ? <ActivityIndicator size="small" color={Colors.text.primary} />
-                : <Ionicons name="add" size={18} color={Colors.text.primary} />
+                : <Ionicons name="add" size={16} color={Colors.text.primary} />
               }
-              <Text style={styles.addBtnText}>Добавить урок</Text>
+              <Text style={styles.addBtnText}>Добавить</Text>
             </TouchableOpacity>
           </View>
 
           {myLessons.length === 0 ? (
-            <TouchableOpacity style={styles.emptyCard} onPress={handleAddLesson} disabled={loading}>
+            <TouchableOpacity style={styles.emptyCard} onPress={handleAddLesson} disabled={loading} activeOpacity={0.7}>
               <Ionicons name="add-circle-outline" size={36} color={Colors.text.disabled} />
               <Text style={styles.emptyTitle}>Добавьте первый урок</Text>
               <Text style={styles.emptySubtitle}>Добавьте видео, материалы и тест</Text>
             </TouchableOpacity>
           ) : (
-            <View style={styles.lessonList}>
-              {myLessons.map((lesson, index) => (
-                <TouchableOpacity
-                  key={lesson.id}
-                  style={styles.lessonCard}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    const courseId = myCourses.find((c) => c.id === lesson.courseId)?.id ?? myCourses[0]?.id;
-                    router.push(`/classroom/${id}/lesson/create?courseId=${courseId}&lessonId=${lesson.id}` as any);
-                  }}
-                >
-                  <View style={styles.lessonIndex}>
-                    <Text style={styles.lessonIndexText}>{index + 1}</Text>
-                  </View>
-                  <View style={styles.lessonInfo}>
-                    <Text style={styles.lessonTitle}>{lesson.title}</Text>
-                    <View style={styles.lessonBadges}>
-                      {lesson.videoUrl && (
-                        <View style={styles.badge}>
-                          <Ionicons name="play-circle-outline" size={12} color={Colors.text.secondary} />
-                          <Text style={styles.badgeText}>Видео</Text>
-                        </View>
-                      )}
-                      {lesson.materials.length > 0 && (
-                        <View style={styles.badge}>
-                          <Ionicons name="attach-outline" size={12} color={Colors.text.secondary} />
-                          <Text style={styles.badgeText}>{lesson.materials.length} файлов</Text>
-                        </View>
-                      )}
-                      {lesson.quiz && (
-                        <View style={styles.badge}>
-                          <Ionicons name="checkmark-circle-outline" size={12} color={Colors.text.secondary} />
-                          <Text style={styles.badgeText}>Тест</Text>
-                        </View>
-                      )}
-                      {lesson.isDraft && (
-                        <View style={[styles.badge, styles.badgeDraft]}>
-                          <Text style={styles.badgeDraftText}>Черновик</Text>
-                        </View>
-                      )}
+            <View style={styles.lessonCards}>
+              {myLessons.map((lesson, index) => {
+                const courseId = myCourses.find((c) => c.id === lesson.courseId)?.id ?? myCourses[0]?.id;
+                return (
+                  <TouchableOpacity
+                    key={lesson.id}
+                    style={styles.lessonCard}
+                    activeOpacity={0.7}
+                    onPress={() => router.push(`/classroom/${id}/lesson/create?courseId=${courseId}&lessonId=${lesson.id}` as any)}
+                  >
+                    {/* Number */}
+                    <View style={styles.lessonNum}>
+                      <Text style={styles.lessonNumText}>{index + 1}</Text>
                     </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={Colors.text.disabled} />
-                </TouchableOpacity>
-              ))}
+
+                    {/* Info */}
+                    <View style={styles.lessonBody}>
+                      <Text style={styles.lessonTitle} numberOfLines={2}>{lesson.title}</Text>
+                      <View style={styles.lessonBadges}>
+                        {lesson.videoUrl && (
+                          <View style={styles.badge}>
+                            <Ionicons name="play-circle-outline" size={11} color={Colors.primary} />
+                            <Text style={[styles.badgeText, { color: Colors.primary }]}>Видео</Text>
+                          </View>
+                        )}
+                        {lesson.materials.length > 0 && (
+                          <View style={styles.badge}>
+                            <Ionicons name="attach-outline" size={11} color={Colors.text.secondary} />
+                            <Text style={styles.badgeText}>{lesson.materials.length} файлов</Text>
+                          </View>
+                        )}
+                        {lesson.quiz && (
+                          <View style={styles.badge}>
+                            <Ionicons name="checkmark-circle-outline" size={11} color={Colors.text.secondary} />
+                            <Text style={styles.badgeText}>Тест</Text>
+                          </View>
+                        )}
+                        {lesson.isDraft && (
+                          <View style={[styles.badge, styles.badgeDraft]}>
+                            <Text style={styles.badgeDraftText}>Черновик</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+
+                    <Ionicons name="chevron-forward" size={16} color={Colors.text.disabled} />
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           )}
         </View>
+
+        {/* Chat section */}
+        <View style={styles.section}>
+          {classroomChat ? (
+            <TouchableOpacity
+              style={styles.chatBtn}
+              activeOpacity={0.75}
+              onPress={() => router.push(`/chat/${classroomChat.id}` as any)}
+            >
+              <View style={styles.chatBtnIcon}>
+                <Ionicons name="chatbubbles-outline" size={18} color={Colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.chatBtnTitle}>Чат курса</Text>
+                <Text style={styles.chatBtnSub}>Открыть чат со студентами</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={Colors.text.disabled} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.chatBtn}
+              activeOpacity={0.75}
+              onPress={handleCreateChat}
+              disabled={creatingChat}
+            >
+              <View style={styles.chatBtnIcon}>
+                <Ionicons name="add-circle-outline" size={18} color={Colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.chatBtnTitle}>Создать чат</Text>
+                <Text style={styles.chatBtnSub}>Чат для общения со студентами</Text>
+              </View>
+              {creatingChat
+                ? <ActivityIndicator size="small" color={Colors.primary} />
+                : <Ionicons name="chevron-forward" size={16} color={Colors.text.disabled} />
+              }
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Danger zone */}
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.deleteBtn} onPress={showConfirm} activeOpacity={0.75}>
+            <Ionicons name="trash-outline" size={18} color={Colors.error} />
+            <Text style={styles.deleteBtnText}>Удалить курс</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Confirmation modal */}
+      <Modal visible={confirmVisible} transparent animationType="none" onRequestClose={hideConfirm}>
+        <Animated.View style={[styles.modalBackdrop, { opacity: opacityAnim }]}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={hideConfirm} />
+          <Animated.View style={[styles.modalCard, { transform: [{ scale: scaleAnim }], opacity: opacityAnim }]}>
+            <View style={styles.warningTag}>
+              <Ionicons name="warning-outline" size={13} color={Colors.error} />
+              <Text style={styles.warningText}>Вы уверены, что хотите удалить курс?</Text>
+            </View>
+
+            <Text style={styles.modalDesc}>
+              Все уроки, материалы и прогресс студентов будут удалены безвозвратно.
+            </Text>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={hideConfirm} activeOpacity={0.7}>
+                <Text style={styles.cancelText}>Отмена</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmBtn, deleting && { opacity: 0.6 }]}
+                onPress={handleDelete}
+                activeOpacity={0.75}
+                disabled={deleting}
+              >
+                <Text style={styles.confirmText}>{deleting ? 'Удаление...' : 'Да, удалить'}</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </Animated.View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -164,90 +303,90 @@ export default function ClassroomManageScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    paddingVertical: 12,
+    gap: Spacing.sm,
   },
+  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   headerTitle: {
-    ...Typography.h3,
-    color: Colors.text.primary,
     flex: 1,
-    textAlign: 'center',
-    marginHorizontal: Spacing.sm,
+    fontSize: 17,
+    fontWeight: '700',
+    color: Colors.text.primary,
   },
+
   infoCard: {
     backgroundColor: Colors.surface,
+    marginHorizontal: Spacing.md,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.md,
-    gap: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: Spacing.md,
   },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  infoText: { ...Typography.caption, color: Colors.text.secondary },
+  infoRow: { flexDirection: 'row', gap: Spacing.lg },
+  infoStat: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  infoStatText: { fontSize: 13, fontWeight: '500', color: Colors.text.secondary },
   infoDesc: { ...Typography.body, color: Colors.text.secondary, lineHeight: 22 },
-  section: { padding: Spacing.md, gap: Spacing.sm },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+
+  section: { paddingHorizontal: Spacing.md, marginBottom: Spacing.md, gap: Spacing.sm },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionTitle: { ...Typography.h3, color: Colors.text.primary },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: BorderRadius.sm,
     backgroundColor: Colors.surfaceSecondary,
   },
-  addBtnText: { ...Typography.caption, fontWeight: '600', color: Colors.text.primary },
+  addBtnText: { fontSize: 13, fontWeight: '600', color: Colors.text.primary },
+
   emptyCard: {
     borderWidth: 1.5,
     borderColor: Colors.border,
     borderStyle: 'dashed',
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
     alignItems: 'center',
     gap: Spacing.sm,
     backgroundColor: Colors.surface,
   },
   emptyTitle: { ...Typography.body, fontWeight: '600', color: Colors.text.primary },
-  emptySubtitle: { ...Typography.caption, color: Colors.text.secondary, textAlign: 'center' },
-  lessonList: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
-  },
+  emptySubtitle: { fontSize: 13, color: Colors.text.secondary, textAlign: 'center' },
+
+  // Lesson cards
+  lessonCards: { gap: Spacing.sm },
   lessonCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    gap: Spacing.md,
+    gap: 14,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.xl,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
-  lessonIndex: {
-    width: 28,
-    height: 28,
-    borderRadius: BorderRadius.sm,
+  lessonNum: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: Colors.surfaceSecondary,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  lessonIndexText: { ...Typography.caption, fontWeight: '700', color: Colors.text.primary },
-  lessonInfo: { flex: 1, gap: 4 },
-  lessonTitle: { ...Typography.body, fontWeight: '500', color: Colors.text.primary },
-  lessonBadges: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+  lessonNumText: { fontSize: 14, fontWeight: '700', color: Colors.text.secondary },
+  lessonBody: { flex: 1, gap: 5 },
+  lessonTitle: { fontSize: 15, fontWeight: '600', color: Colors.text.primary, lineHeight: 20 },
+  lessonBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -260,4 +399,88 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 11, color: Colors.text.secondary },
   badgeDraft: { backgroundColor: Colors.warningSurface },
   badgeDraftText: { fontSize: 11, color: Colors.warning, fontWeight: '600' },
+
+  // Chat button
+  chatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: `${Colors.primary}30`,
+    backgroundColor: `${Colors.primary}08`,
+  },
+  chatBtnIcon: {
+    width: 36, height: 36,
+    borderRadius: BorderRadius.md,
+    backgroundColor: `${Colors.primary}15`,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  chatBtnTitle: { fontSize: 15, fontWeight: '600', color: Colors.primary },
+  chatBtnSub: { fontSize: 12, color: Colors.text.secondary, marginTop: 1 },
+
+  // Delete button
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: `${Colors.error}40`,
+    backgroundColor: `${Colors.error}08`,
+  },
+  deleteBtnText: { fontSize: 15, fontWeight: '600', color: Colors.error },
+
+  // Modal
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.lg,
+  },
+  modalCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: Spacing.lg,
+    width: '100%',
+    gap: Spacing.md,
+    ...Shadows.sm,
+  },
+  warningTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    backgroundColor: `${Colors.error}15`,
+    borderWidth: 1,
+    borderColor: `${Colors.error}30`,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.sm,
+  },
+  warningText: { fontSize: 13, fontWeight: '700', color: Colors.error },
+  modalDesc: { fontSize: 14, color: Colors.text.secondary, lineHeight: 20 },
+  modalActions: { flexDirection: 'row', gap: Spacing.sm, marginTop: 4 },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+  },
+  cancelText: { fontSize: 15, fontWeight: '600', color: Colors.text.primary },
+  confirmBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.error,
+    alignItems: 'center',
+  },
+  confirmText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });

@@ -1,8 +1,8 @@
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  Image, ScrollView, Animated, Dimensions, FlatList,
+  Image, ScrollView, Animated, Dimensions, FlatList, Easing,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useRef, useState, useEffect } from 'react';
@@ -10,7 +10,6 @@ import { useRef, useState, useEffect } from 'react';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../src/constants/theme';
 import { useClassroomStore } from '../../src/store/classroomStore';
 import { useAuthStore } from '../../src/store/authStore';
-import { useCommunityStore } from '../../src/store/communityStore';
 import { useLiveStore } from '../../src/store/liveStore';
 import { Classroom, LiveStream } from '../../src/types';
 import Avatar from '../../src/components/ui/Avatar';
@@ -300,39 +299,202 @@ const cardStyles = StyleSheet.create({
   metaDot: { width: 2, height: 2, borderRadius: 1, backgroundColor: Colors.text.disabled },
 });
 
+// ─── Drawer ───────────────────────────────────────────────────────────────────
+
+function DrawerContent({
+  user, myClassrooms, translateX, closeDrawer,
+}: {
+  user: any;
+  myClassrooms: Classroom[];
+  translateX: Animated.Value;
+  closeDrawer: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Animated.View style={[drawerStyles.drawer, { transform: [{ translateX }] }]}>
+      {/* Account block */}
+      <View style={[drawerStyles.accountBlock, { paddingTop: insets.top + 16 }]}>
+        <Avatar uri={user?.avatar} name={user?.name ?? ''} size={48} />
+        <View style={drawerStyles.accountInfo}>
+          <Text style={drawerStyles.accountName} numberOfLines={1}>{user?.name ?? 'Пользователь'}</Text>
+          <Text style={drawerStyles.accountEmail} numberOfLines={1}>{user?.email ?? ''}</Text>
+        </View>
+      </View>
+
+      <View style={drawerStyles.divider} />
+
+      {/* Courses section */}
+      <View style={drawerStyles.sectionHeader}>
+        <Text style={drawerStyles.sectionTitle}>Мои курсы</Text>
+        <View style={drawerStyles.badge}>
+          <Text style={drawerStyles.badgeText}>{myClassrooms.length}</Text>
+        </View>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+        {myClassrooms.length === 0 ? (
+          <View style={drawerStyles.empty}>
+            <Ionicons name="school-outline" size={28} color={Colors.text.disabled} />
+            <Text style={drawerStyles.emptyText}>Вы не записаны ни на один курс</Text>
+          </View>
+        ) : (
+          myClassrooms.map((c) => (
+            <TouchableOpacity
+              key={c.id}
+              style={drawerStyles.row}
+              activeOpacity={0.65}
+              onPress={() => { closeDrawer(); router.push(`/classroom/${c.id}` as any); }}
+            >
+              <View style={drawerStyles.courseThumb}>
+                {c.thumbnail
+                  ? <Image source={{ uri: c.thumbnail }} style={drawerStyles.courseThumbImg} />
+                  : <Ionicons name="school-outline" size={18} color={Colors.text.disabled} />
+                }
+              </View>
+              <View style={drawerStyles.rowInfo}>
+                <Text style={drawerStyles.rowName} numberOfLines={1}>{c.name}</Text>
+                <Text style={drawerStyles.rowSub}>{c.instructor.name}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={14} color={Colors.text.disabled} />
+            </TouchableOpacity>
+          ))
+        )}
+
+        <View style={drawerStyles.divider} />
+
+        <TouchableOpacity
+          style={drawerStyles.footerBtn}
+          activeOpacity={0.7}
+          onPress={() => { closeDrawer(); router.push('/(tabs)/classrooms' as any); }}
+        >
+          <View style={drawerStyles.footerIcon}>
+            <Ionicons name="compass-outline" size={18} color={Colors.primary} />
+          </View>
+          <Text style={drawerStyles.footerText}>Обзор курсов</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: insets.bottom + 16 }} />
+      </ScrollView>
+    </Animated.View>
+  );
+}
+
+const drawerStyles = StyleSheet.create({
+  drawer: {
+    position: 'absolute',
+    top: 0, left: 0, bottom: 0,
+    width: DRAWER_WIDTH,
+    backgroundColor: Colors.surface,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRightColor: Colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 4, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  accountBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: Spacing.md,
+    paddingBottom: 20,
+  },
+  accountInfo: { flex: 1 },
+  accountName: { fontSize: 15, fontWeight: '700', color: Colors.text.primary },
+  accountEmail: { fontSize: 12, color: Colors.text.secondary, marginTop: 2 },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.border, marginHorizontal: Spacing.md },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 14,
+  },
+  sectionTitle: { fontSize: 11, fontWeight: '700', color: Colors.text.secondary, textTransform: 'uppercase', letterSpacing: 0.6, flex: 1 },
+  badge: {
+    backgroundColor: Colors.surfaceSecondary,
+    paddingHorizontal: 7, paddingVertical: 2,
+    borderRadius: BorderRadius.full,
+  },
+  badgeText: { fontSize: 11, fontWeight: '600', color: Colors.text.secondary },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 11,
+  },
+  rowInfo: { flex: 1 },
+  rowName: { fontSize: 14, fontWeight: '600', color: Colors.text.primary },
+  rowSub: { fontSize: 11, color: Colors.text.disabled, marginTop: 2 },
+  courseThumb: {
+    width: 38, height: 38,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.surfaceSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    flexShrink: 0,
+  },
+  courseThumbImg: { width: '100%', height: '100%' },
+  empty: { alignItems: 'center', paddingTop: 32, paddingHorizontal: Spacing.lg, gap: 8 },
+  emptyText: { fontSize: 13, color: Colors.text.secondary, textAlign: 'center' },
+  footerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 14,
+    marginTop: 4,
+  },
+  footerIcon: {
+    width: 34, height: 34,
+    borderRadius: BorderRadius.md,
+    backgroundColor: `${Colors.primary}18`,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  footerText: { fontSize: 14, fontWeight: '500', color: Colors.primary },
+});
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
   const classrooms = useClassroomStore((s) => s.classrooms);
   const user = useAuthStore((s) => s.user);
-  const communities = useCommunityStore((s) => s.communities);
-  const myCommunities = communities.filter((c) => c.isMember);
+  const myClassrooms = classrooms.filter((c) => c.isEnrolled);
   const streams = useLiveStore((s) => s.streams);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  const iconScale = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
 
   const openDrawer = () => {
+    tapLight();
     setDrawerOpen(true);
-    Animated.sequence([
-      Animated.timing(iconScale, { toValue: 0.8, duration: 80, useNativeDriver: true }),
-      Animated.spring(iconScale, { toValue: 1, damping: 8, stiffness: 300, useNativeDriver: true }),
-    ]).start();
     Animated.parallel([
-      Animated.spring(translateX, { toValue: 0, damping: 18, stiffness: 200, mass: 0.9, useNativeDriver: true }),
-      Animated.timing(backdropOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
+      Animated.timing(translateX, {
+        toValue: 0,
+        duration: 280,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
     ]).start();
   };
 
   const closeDrawer = () => {
-    setDrawerOpen(false);
     Animated.parallel([
-      Animated.spring(translateX, { toValue: -DRAWER_WIDTH, damping: 18, stiffness: 200, mass: 0.9, useNativeDriver: true }),
-      Animated.timing(backdropOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-    ]).start();
+      Animated.timing(translateX, {
+        toValue: -DRAWER_WIDTH,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, { toValue: 0, duration: 220, useNativeDriver: true }),
+    ]).start(() => setDrawerOpen(false));
   };
 
   const today = new Date();
@@ -360,9 +522,7 @@ export default function HomeScreen() {
             style={styles.burgerBtn}
             activeOpacity={0.8}
           >
-            <Animated.View style={{ transform: [{ scale: iconScale }] }}>
-              <Ionicons name={drawerOpen ? 'close' : 'menu'} size={22} color={Colors.text.primary} />
-            </Animated.View>
+            <Ionicons name={drawerOpen ? 'close' : 'menu'} size={22} color={Colors.text.primary} />
           </TouchableOpacity>
 
           <Text style={styles.monthLabel}>{monthYear}</Text>
@@ -410,8 +570,13 @@ export default function HomeScreen() {
         >
           {filtered.length === 0 ? (
             <View style={styles.empty}>
-              <Ionicons name="school-outline" size={40} color={Colors.text.disabled} />
-              <Text style={styles.emptyText}>Курсов пока нет</Text>
+              <Image
+                source={require('../../assets/images/empty-courses.png')}
+                style={styles.emptyIllustration}
+                resizeMode="contain"
+              />
+              <Text style={styles.emptyTitle}>Нет курсов</Text>
+              <Text style={styles.emptyText}>Создайте первый курс и начните обучать студентов</Text>
             </View>
           ) : (
             pairs.map((pair, i) => (
@@ -434,44 +599,12 @@ export default function HomeScreen() {
         <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
           <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={closeDrawer} />
         </Animated.View>
-        <Animated.View style={[styles.drawer, { transform: [{ translateX }] }]}>
-          <View style={styles.drawerHeader}>
-            <Text style={styles.drawerTitle}>Мои сообщества</Text>
-            <Text style={styles.drawerCount}>{myCommunities.length}</Text>
-          </View>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {myCommunities.length === 0 ? (
-              <View style={styles.drawerEmpty}>
-                <Ionicons name="people-outline" size={32} color={Colors.text.disabled} />
-                <Text style={styles.drawerEmptyText}>Вы не вступили ни в одно сообщество</Text>
-              </View>
-            ) : (
-              myCommunities.map((c) => (
-                <TouchableOpacity
-                  key={c.id}
-                  style={styles.communityRow}
-                  activeOpacity={0.65}
-                  onPress={() => { closeDrawer(); router.push(`/community/${c.id}` as any); }}
-                >
-                  <Avatar uri={c.avatar} name={c.name} size={40} />
-                  <View style={styles.communityInfo}>
-                    <Text style={styles.communityName}>{c.name}</Text>
-                    <Text style={styles.communityMembers}>{c.membersCount.toLocaleString()} участников</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={14} color={Colors.text.disabled} />
-                </TouchableOpacity>
-              ))
-            )}
-            <TouchableOpacity
-              style={styles.drawerFooterBtn}
-              activeOpacity={0.7}
-              onPress={() => { closeDrawer(); router.push('/communities' as any); }}
-            >
-              <Ionicons name="compass-outline" size={16} color={Colors.primary} />
-              <Text style={styles.drawerFooterText}>Обзор сообществ</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </Animated.View>
+        <DrawerContent
+          user={user}
+          myClassrooms={myClassrooms}
+          translateX={translateX}
+          closeDrawer={closeDrawer}
+        />
       </View>
 
     </SafeAreaView>
@@ -551,57 +684,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   gridCell: { flex: 1 },
-  empty: { alignItems: 'center', paddingVertical: 48, gap: Spacing.sm },
-  emptyText: { ...Typography.body, color: Colors.text.secondary },
+  empty: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: Spacing.lg, gap: 8 },
+  emptyIllustration: { width: 200, height: 200, marginBottom: 8 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
+  emptyText: { fontSize: 14, color: Colors.text.secondary, textAlign: 'center', lineHeight: 20 },
 
   // Drawer
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)' },
-  drawer: {
-    position: 'absolute',
-    top: 0, left: 0, bottom: 0,
-    width: DRAWER_WIDTH,
-    backgroundColor: Colors.surface,
-    borderRightWidth: 1,
-    borderRightColor: Colors.border,
-    ...Shadows.sm,
-  },
-  drawerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  drawerTitle: { ...Typography.h3, color: Colors.text.primary, flex: 1 },
-  drawerCount: {
-    fontSize: 12, fontWeight: '600', color: Colors.text.secondary,
-    backgroundColor: Colors.surfaceSecondary,
-    paddingHorizontal: 8, paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-  },
-  communityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  communityInfo: { flex: 1 },
-  communityName: { ...Typography.body, fontWeight: '600', color: Colors.text.primary },
-  communityMembers: { fontSize: 11, color: Colors.text.disabled, marginTop: 1 },
-  drawerEmpty: { alignItems: 'center', paddingTop: 48, paddingHorizontal: Spacing.lg, gap: Spacing.sm },
-  drawerEmptyText: { fontSize: 13, color: Colors.text.secondary, textAlign: 'center' },
-  drawerFooterBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 14,
-    marginTop: 4,
-  },
-  drawerFooterText: { ...Typography.body, color: Colors.primary, fontWeight: '500' },
 });
