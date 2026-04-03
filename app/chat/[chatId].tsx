@@ -1,6 +1,6 @@
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, KeyboardAvoidingView, Platform,
+  TextInput, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -73,13 +73,36 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
         </TouchableOpacity>
+
+        {/* Avatar */}
+        <View style={styles.headerAvatar}>
+          {chat?.classroomThumbnail ? (
+            <Image source={{ uri: chat.classroomThumbnail }} style={styles.headerAvatarImg} />
+          ) : (
+            <View style={styles.headerAvatarFallback}>
+              <Ionicons name="chatbubbles-outline" size={18} color={Colors.primary} />
+            </View>
+          )}
+        </View>
+
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle} numberOfLines={1}>{chat?.name ?? 'Чат'}</Text>
+          {chat?.description ? (
+            <Text style={styles.headerSub} numberOfLines={1}>{chat.description}</Text>
+          ) : (
+            <View style={styles.headerBadgeRow}>
+              <View style={styles.headerActiveDot} />
+              <Text style={styles.headerBadgeText}>
+                {chat?.classroomId ? 'Чат курса' : 'Личный чат'}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -100,7 +123,9 @@ export default function ChatScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="chatbubble-outline" size={36} color={Colors.text.disabled} />
+              <View style={styles.emptyIconWrap}>
+                <Ionicons name="chatbubble-ellipses-outline" size={32} color={Colors.primary} />
+              </View>
               <Text style={styles.emptyText}>Напишите первое сообщение</Text>
             </View>
           }
@@ -124,7 +149,7 @@ export default function ChatScreen() {
             disabled={!text.trim() || sending}
             activeOpacity={0.8}
           >
-            <Ionicons name="send" size={18} color="#fff" />
+            <Ionicons name="send" size={16} color="#fff" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -135,6 +160,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -143,12 +169,31 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.border,
-    gap: Spacing.sm,
+    gap: 10,
   },
-  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  backBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  headerAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    overflow: 'hidden',
+    flexShrink: 0,
+  },
+  headerAvatarImg: { width: '100%', height: '100%' },
+  headerAvatarFallback: {
+    flex: 1,
+    backgroundColor: `${Colors.primary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerInfo: { flex: 1 },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: Colors.text.primary },
+  headerTitle: { fontSize: 15, fontWeight: '700', color: Colors.text.primary },
+  headerSub: { fontSize: 12, color: Colors.text.secondary, marginTop: 1 },
+  headerBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
+  headerActiveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.primary },
+  headerBadgeText: { fontSize: 11, fontWeight: '600', color: Colors.primary, letterSpacing: 0.3 },
 
+  // Messages
   messagesList: { padding: Spacing.md, gap: 8, flexGrow: 1 },
 
   msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 8 },
@@ -177,9 +222,19 @@ const styles = StyleSheet.create({
   bubbleTime: { fontSize: 11, color: Colors.text.disabled, alignSelf: 'flex-end' },
   bubbleTimeMe: { color: 'rgba(255,255,255,0.6)' },
 
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 80 },
+  // Empty
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 80 },
+  emptyIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: `${Colors.primary}12`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emptyText: { ...Typography.body, color: Colors.text.secondary },
 
+  // Input bar
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',

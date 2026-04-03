@@ -8,12 +8,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Spacing, BorderRadius, Shadows } from '../../src/constants/theme';
+import { COURSE_TAGS } from '../../src/constants/tags';
 import Input from '../../src/components/ui/Input';
 import Button from '../../src/components/ui/Button';
 import { useClassroomStore } from '../../src/store/classroomStore';
 import { useAuthStore } from '../../src/store/authStore';
 import { useChatStore } from '../../src/store/chatStore';
-import { tapMedium, notifySuccess } from '../../src/utils/haptics';
+import { tapMedium, tapLight, notifySuccess } from '../../src/utils/haptics';
 
 export default function CreateClassroomScreen() {
   const addClassroom = useClassroomStore((s) => s.addClassroom);
@@ -24,7 +25,17 @@ export default function CreateClassroomScreen() {
   const [thumbnail, setThumbnail] = useState<string | undefined>();
   const [isPublic, setIsPublic] = useState(true);
   const [withChat, setWithChat] = useState(true);
+  const [chatName, setChatName] = useState('');
+  const [chatDesc, setChatDesc] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const toggleTag = (id: string) => {
+    tapLight();
+    setSelectedTags((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
+    );
+  };
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -57,9 +68,15 @@ export default function CreateClassroomScreen() {
     tapMedium();
     setLoading(true);
     try {
-      const newId = await addClassroom({ name: name.trim(), description: description.trim(), thumbnail, isPublic });
+      const newId = await addClassroom({
+        name: name.trim(),
+        description: description.trim(),
+        thumbnail,
+        isPublic,
+        tags: selectedTags,
+      });
       if (withChat) {
-        await createChat(name.trim(), newId);
+        await createChat(chatName.trim() || name.trim(), chatDesc.trim() || undefined, newId);
       }
       notifySuccess();
       router.replace(`/classroom/${newId}/manage` as any);
@@ -74,7 +91,7 @@ export default function CreateClassroomScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
-        {/* ── Top zone: plain background ── */}
+        {/* ── Top zone ── */}
         <View style={styles.topZone}>
           <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
             <Ionicons name="close" size={22} color={Colors.text.primary} />
@@ -132,6 +149,42 @@ export default function CreateClassroomScreen() {
             style={{ minHeight: 100, textAlignVertical: 'top' }}
           />
 
+          {/* Tags */}
+          <View style={styles.tagsSection}>
+            <View style={styles.tagsSectionHeader}>
+              <Text style={styles.tagsSectionTitle}>Категория курса</Text>
+              {selectedTags.length > 0 && (
+                <Text style={styles.tagsCount}>{selectedTags.length} выбрано</Text>
+              )}
+            </View>
+            <Text style={styles.tagsSectionHint}>Выберите одну или несколько категорий</Text>
+            <View style={styles.tagsGrid}>
+              {COURSE_TAGS.map((tag) => {
+                const selected = selectedTags.includes(tag.id);
+                return (
+                  <TouchableOpacity
+                    key={tag.id}
+                    style={[
+                      styles.tagChip,
+                      { borderColor: selected ? tag.color : Colors.border },
+                      selected && { backgroundColor: tag.background },
+                    ]}
+                    onPress={() => toggleTag(tag.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.tagEmoji}>{tag.emoji}</Text>
+                    <Text style={[styles.tagLabel, selected && { color: tag.color, fontWeight: '700' }]}>
+                      {tag.label}
+                    </Text>
+                    {selected && (
+                      <Ionicons name="checkmark-circle" size={14} color={tag.color} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
           {/* Access toggle */}
           <View style={styles.switchRow}>
             <View style={styles.switchLeft}>
@@ -169,6 +222,26 @@ export default function CreateClassroomScreen() {
             />
           </View>
 
+          {withChat && (
+            <View style={styles.chatFields}>
+              <Input
+                label="Название чата"
+                placeholder={name.trim() || 'Название чата'}
+                value={chatName}
+                onChangeText={setChatName}
+              />
+              <Input
+                label="Описание чата (необязательно)"
+                placeholder="О чём этот чат?"
+                value={chatDesc}
+                onChangeText={setChatDesc}
+                multiline
+                numberOfLines={3}
+                style={{ minHeight: 80, textAlignVertical: 'top' }}
+              />
+            </View>
+          )}
+
           <Button
             title="Создать курс"
             onPress={handleCreate}
@@ -186,7 +259,6 @@ export default function CreateClassroomScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
-  // Top zone — plain bg
   topZone: {
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.sm,
@@ -205,7 +277,6 @@ const styles = StyleSheet.create({
   topTitle: { fontSize: 26, fontWeight: '800', color: Colors.text.primary },
   topSubtitle: { fontSize: 14, color: Colors.text.secondary },
 
-  // White card sheet
   sheet: {
     flex: 1,
     backgroundColor: Colors.surface,
@@ -213,10 +284,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     ...Shadows.sm,
   },
-  sheetContent: {
-    padding: Spacing.md,
-    gap: Spacing.md,
-  },
+  sheetContent: { padding: Spacing.md, gap: Spacing.md },
 
   // Thumbnail
   thumbPicker: {
@@ -260,6 +328,43 @@ const styles = StyleSheet.create({
   thumbEmptyTitle: { fontSize: 14, fontWeight: '600', color: Colors.text.secondary },
   thumbEmptyHint: { fontSize: 12, color: Colors.text.disabled },
 
+  // Tags
+  tagsSection: {
+    gap: 10,
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 14,
+  },
+  tagsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  tagsSectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.text.primary },
+  tagsCount: { fontSize: 12, fontWeight: '600', color: Colors.primary },
+  tagsSectionHint: { fontSize: 12, color: Colors.text.secondary, marginTop: -4 },
+  tagsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  tagChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  tagEmoji: { fontSize: 14 },
+  tagLabel: { fontSize: 13, fontWeight: '500', color: Colors.text.secondary },
+
   // Switch row
   switchRow: {
     flexDirection: 'row',
@@ -282,4 +387,6 @@ const styles = StyleSheet.create({
   },
   switchLabel: { fontSize: 14, fontWeight: '600', color: Colors.text.primary },
   switchDesc: { fontSize: 12, color: Colors.text.secondary, marginTop: 2 },
+
+  chatFields: { gap: Spacing.sm },
 });

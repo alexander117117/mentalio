@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import { useRef, useState, useEffect } from 'react';
 
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../src/constants/theme';
+import { getTag } from '../../src/constants/tags';
 import { useClassroomStore } from '../../src/store/classroomStore';
 import { useAuthStore } from '../../src/store/authStore';
 import { useLiveStore } from '../../src/store/liveStore';
@@ -251,6 +252,20 @@ function CourseCard({ classroom }: { classroom: Classroom }) {
       </View>
 
       <View style={cardStyles.body}>
+        {classroom.tags?.length > 0 && (
+          <View style={cardStyles.tagsRow}>
+            {classroom.tags.slice(0, 2).map((tagId) => {
+              const tag = getTag(tagId);
+              if (!tag) return null;
+              return (
+                <View key={tagId} style={[cardStyles.tagChip, { backgroundColor: tag.background }]}>
+                  <Text style={cardStyles.tagEmoji}>{tag.emoji}</Text>
+                  <Text style={[cardStyles.tagLabel, { color: tag.color }]}>{tag.label}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
         <Text style={cardStyles.name} numberOfLines={2}>{classroom.name}</Text>
         <View style={cardStyles.instructor}>
           <Avatar uri={classroom.instructor.avatar} name={classroom.instructor.name} size={16} />
@@ -297,6 +312,10 @@ const cardStyles = StyleSheet.create({
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metaText: { fontSize: 11, color: Colors.text.disabled },
   metaDot: { width: 2, height: 2, borderRadius: 1, backgroundColor: Colors.text.disabled },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  tagChip: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 3, borderRadius: BorderRadius.full },
+  tagEmoji: { fontSize: 11 },
+  tagLabel: { fontSize: 10, fontWeight: '700' },
 });
 
 // ─── Drawer ───────────────────────────────────────────────────────────────────

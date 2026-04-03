@@ -1,6 +1,6 @@
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, Alert, Modal, Animated,
+  ActivityIndicator, Alert, Modal, Animated, TextInput, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -9,6 +9,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../../src/constants/theme';
 import { useClassroomStore } from '../../../src/store/classroomStore';
 import { useChatStore } from '../../../src/store/chatStore';
+import { COURSE_TAGS } from '../../../src/constants/tags';
+import { tapLight } from '../../../src/utils/haptics';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function ClassroomManageScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,13 +22,24 @@ export default function ClassroomManageScreen() {
   const fetchLessons = useClassroomStore((s) => s.fetchLessons);
   const addCourse = useClassroomStore((s) => s.addCourse);
   const deleteClassroom = useClassroomStore((s) => s.deleteClassroom);
+  const updateClassroomThumbnail = useClassroomStore((s) => s.updateClassroomThumbnail);
+  const updateClassroomTags = useClassroomStore((s) => s.updateClassroomTags);
   const chats = useChatStore((s) => s.chats);
   const fetchChats = useChatStore((s) => s.fetchChats);
   const createChat = useChatStore((s) => s.createChat);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [uploadingThumb, setUploadingThumb] = useState(false);
+  const [savingTags, setSavingTags] = useState(false);
+  const [localTags, setLocalTags] = useState<string[] | null>(null);
   const [creatingChat, setCreatingChat] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
+  const [chatFormVisible, setChatFormVisible] = useState(false);
+  const [chatFormName, setChatFormName] = useState('');
+  const [chatFormDesc, setChatFormDesc] = useState('');
+
+  const chatFormScale = useRef(new Animated.Value(0.88)).current;
+  const chatFormOpacity = useRef(new Animated.Value(0)).current;
 
   const classroomChat = chats.find((c) => c.classroomId === id);
 
@@ -47,16 +61,75 @@ export default function ClassroomManageScreen() {
     fetchChats();
   }, [id]);
 
+  const showChatForm = () => {
+    setChatFormName(classroom?.name ?? '');
+    setChatFormDesc('');
+    setChatFormVisible(true);
+    Animated.parallel([
+      Animated.spring(chatFormScale, { toValue: 1, damping: 18, stiffness: 260, useNativeDriver: true }),
+      Animated.timing(chatFormOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const hideChatForm = () => {
+    Animated.parallel([
+      Animated.timing(chatFormScale, { toValue: 0.88, duration: 150, useNativeDriver: true }),
+      Animated.timing(chatFormOpacity, { toValue: 0, duration: 150, useNativeDriver: true }),
+    ]).start(() => setChatFormVisible(false));
+  };
+
   const handleCreateChat = async () => {
-    if (!classroom) return;
+    if (!chatFormName.trim()) return;
+    hideChatForm();
     setCreatingChat(true);
     try {
-      const chatId = await createChat(classroom.name, id);
+      const chatId = await createChat(chatFormName.trim(), chatFormDesc.trim() || undefined, id);
       router.push(`/chat/${chatId}` as any);
     } catch (e: any) {
       Alert.alert('Ошибка', e?.message ?? 'Не удалось создать чат');
     } finally {
       setCreatingChat(false);
+    }
+  };
+
+  const handlePickThumbnail = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Нет доступа', 'Разрешите доступ к галерее в настройках.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+    setUploadingThumb(true);
+    try {
+      await updateClassroomThumbnail(id!, result.assets[0].uri);
+    } catch (e: any) {
+      Alert.alert('Ошибка', e?.message ?? 'Не удалось загрузить обложку');
+    } finally {
+      setUploadingThumb(false);
+    }
+  };
+
+  const activeTags = localTags ?? classroom?.tags ?? [];
+
+  const toggleTag = async (tagId: string) => {
+    tapLight();
+    const next = activeTags.includes(tagId)
+      ? activeTags.filter((t) => t !== tagId)
+      : [...activeTags, tagId];
+    setLocalTags(next);
+    setSavingTags(true);
+    try {
+      await updateClassroomTags(id!, next);
+    } catch {
+      setLocalTags(activeTags); // rollback
+    } finally {
+      setSavingTags(false);
     }
   };
 
@@ -126,6 +199,32 @@ export default function ClassroomManageScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Thumbnail */}
+        <TouchableOpacity
+          style={styles.thumbWrap}
+          onPress={handlePickThumbnail}
+          activeOpacity={0.8}
+          disabled={uploadingThumb}
+        >
+          {classroom.thumbnail ? (
+            <Image source={{ uri: classroom.thumbnail }} style={styles.thumbImg} />
+          ) : (
+            <View style={styles.thumbPlaceholder}>
+              <Ionicons name="image-outline" size={32} color={Colors.text.disabled} />
+            </View>
+          )}
+          <View style={styles.thumbOverlay}>
+            {uploadingThumb ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <View style={styles.thumbBtn}>
+                <Ionicons name="camera" size={15} color="#fff" />
+                <Text style={styles.thumbBtnText}>Изменить обложку</Text>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+
         {/* Info card */}
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
@@ -141,6 +240,36 @@ export default function ClassroomManageScreen() {
           {classroom.description ? (
             <Text style={styles.infoDesc}>{classroom.description}</Text>
           ) : null}
+        </View>
+
+        {/* Tags section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Категории</Text>
+            {savingTags && <ActivityIndicator size="small" color={Colors.text.disabled} />}
+          </View>
+          <View style={styles.tagsGrid}>
+            {COURSE_TAGS.map((tag) => {
+              const selected = activeTags.includes(tag.id);
+              return (
+                <TouchableOpacity
+                  key={tag.id}
+                  style={[
+                    styles.tagChip,
+                    { borderColor: selected ? tag.color : Colors.border },
+                    selected && { backgroundColor: tag.background },
+                  ]}
+                  onPress={() => toggleTag(tag.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.tagEmoji}>{tag.emoji}</Text>
+                  <Text style={[styles.tagLabel, selected && { color: tag.color, fontWeight: '700' }]}>
+                    {tag.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
 
         {/* Lessons section */}
@@ -237,7 +366,7 @@ export default function ClassroomManageScreen() {
             <TouchableOpacity
               style={styles.chatBtn}
               activeOpacity={0.75}
-              onPress={handleCreateChat}
+              onPress={showChatForm}
               disabled={creatingChat}
             >
               <View style={styles.chatBtnIcon}>
@@ -265,6 +394,59 @@ export default function ClassroomManageScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Chat form modal */}
+      <Modal visible={chatFormVisible} transparent animationType="none" onRequestClose={hideChatForm}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <Animated.View style={[styles.modalBackdrop, { opacity: chatFormOpacity }]}>
+            <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={hideChatForm} />
+            <Animated.View style={[styles.modalCard, { transform: [{ scale: chatFormScale }], opacity: chatFormOpacity }]}>
+              <Text style={styles.chatFormTitle}>Новый чат</Text>
+              <Text style={styles.chatFormSub}>Название и описание для чата курса</Text>
+
+              <View style={styles.chatFormField}>
+                <Text style={styles.chatFormLabel}>Название</Text>
+                <TextInput
+                  style={styles.chatFormInput}
+                  value={chatFormName}
+                  onChangeText={setChatFormName}
+                  placeholder="Название чата"
+                  placeholderTextColor={Colors.text.disabled}
+                  autoFocus
+                />
+              </View>
+
+              <View style={styles.chatFormField}>
+                <Text style={styles.chatFormLabel}>Описание (необязательно)</Text>
+                <TextInput
+                  style={[styles.chatFormInput, styles.chatFormTextarea]}
+                  value={chatFormDesc}
+                  onChangeText={setChatFormDesc}
+                  placeholder="О чём этот чат?"
+                  placeholderTextColor={Colors.text.disabled}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                />
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={hideChatForm} activeOpacity={0.7}>
+                  <Text style={styles.cancelText}>Отмена</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.confirmBtn, { backgroundColor: Colors.primary }, !chatFormName.trim() && { opacity: 0.4 }]}
+                  onPress={handleCreateChat}
+                  activeOpacity={0.75}
+                  disabled={!chatFormName.trim()}
+                >
+                  <Text style={styles.confirmText}>Создать</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* Confirmation modal */}
       <Modal visible={confirmVisible} transparent animationType="none" onRequestClose={hideConfirm}>
@@ -318,6 +500,36 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.text.primary,
   },
+
+  // Thumbnail
+  thumbWrap: {
+    height: 180,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+    backgroundColor: Colors.surfaceSecondary,
+  },
+  thumbImg: { width: '100%', height: '100%' },
+  thumbPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  thumbOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thumbBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  thumbBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 
   infoCard: {
     backgroundColor: Colors.surface,
@@ -399,6 +611,22 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 11, color: Colors.text.secondary },
   badgeDraft: { backgroundColor: Colors.warningSurface },
   badgeDraftText: { fontSize: 11, color: Colors.warning, fontWeight: '600' },
+
+  // Tags
+  tagsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tagChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  tagEmoji: { fontSize: 14 },
+  tagLabel: { fontSize: 13, fontWeight: '500', color: Colors.text.secondary },
 
   // Chat button
   chatBtn: {
@@ -483,4 +711,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   confirmText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+
+  // Chat form
+  chatFormTitle: { fontSize: 18, fontWeight: '800', color: Colors.text.primary },
+  chatFormSub: { fontSize: 13, color: Colors.text.secondary, marginTop: 2, marginBottom: 4 },
+  chatFormField: { gap: 6 },
+  chatFormLabel: { fontSize: 12, fontWeight: '600', color: Colors.text.secondary, textTransform: 'uppercase', letterSpacing: 0.4 },
+  chatFormInput: {
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: Colors.text.primary,
+  },
+  chatFormTextarea: { minHeight: 72, textAlignVertical: 'top', paddingTop: 10 },
 });

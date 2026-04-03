@@ -12,7 +12,9 @@ interface ClassroomStore {
   fetchCourses: (classroomId: string) => Promise<void>;
   fetchLessons: (courseId: string) => Promise<void>;
 
-  addClassroom: (data: { name: string; description: string; thumbnail?: string; isPublic: boolean }) => Promise<string>;
+  addClassroom: (data: { name: string; description: string; thumbnail?: string; isPublic: boolean; tags?: string[] }) => Promise<string>;
+  updateClassroomThumbnail: (classroomId: string, localUri: string) => Promise<void>;
+  updateClassroomTags: (classroomId: string, tags: string[]) => Promise<void>;
   addCourse: (data: { classroomId: string; title: string; description: string }) => Promise<string>;
   addLesson: (data: {
     courseId: string;
@@ -35,6 +37,7 @@ function mapClassroom(row: any, userId?: string): Classroom {
     name: row.name,
     description: row.description ?? '',
     thumbnail: row.thumbnail_url,
+    tags: row.tags ?? [],
     instructor: {
       id: row.profiles?.id ?? row.instructor_id,
       name: row.profiles?.name ?? '',
@@ -144,6 +147,7 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => ({
         description: data.description,
         thumbnail_url: data.thumbnail,
         is_public: data.isPublic,
+        tags: data.tags ?? [],
         instructor_id: user.id,
       })
       .select(`*, profiles!classrooms_instructor_id_fkey(*)`)
@@ -256,6 +260,48 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => ({
     set({
       classrooms: get().classrooms.filter((c) => c.id !== classroomId),
       courses: get().courses.filter((c) => c.classroomId !== classroomId),
+    });
+  },
+
+  updateClassroomTags: async (classroomId, tags) => {
+    const { error } = await supabase
+      .from('classrooms')
+      .update({ tags })
+      .eq('id', classroomId);
+    if (error) throw new Error(error.message);
+    set({
+      classrooms: get().classrooms.map((c) =>
+        c.id === classroomId ? { ...c, tags } : c
+      ),
+    });
+  },
+
+  updateClassroomThumbnail: async (classroomId, localUri) => {
+    const ext = localUri.split('.').pop()?.toLowerCase().split('?')[0] ?? 'jpg';
+    const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
+    const path = `thumbnails/${classroomId}.${ext}`;
+
+    const formData = new FormData();
+    formData.append('file', { uri: localUri, name: `thumbnail.${ext}`, type: mime } as any);
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, formData, { contentType: mime, upsert: true });
+    if (uploadError) throw new Error(uploadError.message);
+
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+    const thumbnailUrl = urlData.publicUrl;
+
+    const { error } = await supabase
+      .from('classrooms')
+      .update({ thumbnail_url: thumbnailUrl })
+      .eq('id', classroomId);
+    if (error) throw new Error(error.message);
+
+    set({
+      classrooms: get().classrooms.map((c) =>
+        c.id === classroomId ? { ...c, thumbnail: thumbnailUrl } : c
+      ),
     });
   },
 }));

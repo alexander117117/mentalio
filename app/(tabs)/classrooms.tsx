@@ -1,12 +1,14 @@
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput,
-  Modal, Animated, Image, Pressable,
+  Modal, Animated, Image, Pressable, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
+import { COURSE_TAGS } from '../../src/constants/tags';
 import ClassroomCard from '../../src/components/common/ClassroomCard';
 import { useClassroomStore } from '../../src/store/classroomStore';
 
@@ -192,14 +194,19 @@ const modalStyles = StyleSheet.create({
 
 export default function ClassroomsScreen() {
   const classrooms = useClassroomStore((s) => s.classrooms);
+  const fetchClassrooms = useClassroomStore((s) => s.fetchClassrooms);
   const [segment, setSegment] = useState<Segment>('mine');
   const [search, setSearch] = useState('');
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  useFocusEffect(useCallback(() => { fetchClassrooms(); }, []));
 
   const data = classrooms.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     const matchesSegment = segment === 'mine' ? c.isEnrolled : c.isPublic;
-    return matchesSearch && matchesSegment;
+    const matchesTag = activeTag ? (c.tags ?? []).includes(activeTag) : true;
+    return matchesSearch && matchesSegment && matchesTag;
   });
 
   return (
@@ -238,6 +245,41 @@ export default function ClassroomsScreen() {
           onChangeText={setSearch}
         />
       </View>
+
+      {/* Tag filter strip */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tagStrip}
+        style={styles.tagStripWrap}
+      >
+        <TouchableOpacity
+          style={[styles.tagFilterChip, activeTag === null && styles.tagFilterChipActive]}
+          onPress={() => setActiveTag(null)}
+        >
+          <Text style={[styles.tagFilterText, activeTag === null && styles.tagFilterTextActive]}>
+            Все
+          </Text>
+        </TouchableOpacity>
+        {COURSE_TAGS.map((tag) => {
+          const isActive = activeTag === tag.id;
+          return (
+            <TouchableOpacity
+              key={tag.id}
+              style={[
+                styles.tagFilterChip,
+                isActive && { backgroundColor: tag.background, borderColor: tag.color },
+              ]}
+              onPress={() => setActiveTag(isActive ? null : tag.id)}
+            >
+              <Text style={styles.tagFilterEmoji}>{tag.emoji}</Text>
+              <Text style={[styles.tagFilterText, isActive && { color: tag.color, fontWeight: '700' }]}>
+                {tag.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
       <FlatList
         data={data}
@@ -382,4 +424,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+
+  // Tag filter strip
+  tagStripWrap: { maxHeight: 44 },
+  tagStrip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tagFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  tagFilterChipActive: {
+    backgroundColor: Colors.surfaceSecondary,
+    borderColor: Colors.text.primary,
+  },
+  tagFilterEmoji: { fontSize: 13 },
+  tagFilterText: { fontSize: 13, fontWeight: '500', color: Colors.text.secondary },
+  tagFilterTextActive: { color: Colors.text.primary, fontWeight: '700' },
 });

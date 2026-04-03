@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { Classroom } from '../../types';
 import Avatar from '../ui/Avatar';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
+import { getTag } from '../../constants/tags';
 
 interface Props {
   classroom: Classroom;
@@ -33,6 +34,22 @@ export default function ClassroomCard({ classroom }: Props) {
       </View>
 
       <View style={styles.body}>
+        {/* Category tags */}
+        {classroom.tags?.length > 0 && (
+          <View style={styles.catTags}>
+            {classroom.tags.slice(0, 2).map((tagId) => {
+              const tag = getTag(tagId);
+              if (!tag) return null;
+              return (
+                <View key={tagId} style={[styles.catTag, { backgroundColor: tag.background }]}>
+                  <Text style={styles.catTagEmoji}>{tag.emoji}</Text>
+                  <Text style={[styles.catTagLabel, { color: tag.color }]}>{tag.label}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
         <Text style={styles.name} numberOfLines={2}>{classroom.name}</Text>
 
         <View style={styles.instructor}>
@@ -41,9 +58,14 @@ export default function ClassroomCard({ classroom }: Props) {
         </View>
 
         <View style={styles.stats}>
-          <Text style={styles.statText}>{classroom.coursesCount} курсов</Text>
-          <Text style={styles.dot}>·</Text>
-          <Text style={styles.statText}>{classroom.studentsCount.toLocaleString()} уч.</Text>
+          <View style={[styles.statTag, styles.tagBlue]}>
+            <Ionicons name="book-outline" size={11} color="#3B82F6" />
+            <Text style={[styles.tagText, { color: '#3B82F6' }]}>{classroom.coursesCount} курсов</Text>
+          </View>
+          <View style={[styles.statTag, styles.tagGreen]}>
+            <Ionicons name="people-outline" size={11} color="#16A34A" />
+            <Text style={[styles.tagText, { color: '#16A34A' }]}>{classroom.studentsCount.toLocaleString()} уч.</Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -108,17 +130,30 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     flex: 1,
   },
-  stats: {
+  // Category tags
+  catTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  catTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+  },
+  catTagEmoji: { fontSize: 11 },
+  catTagLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.2 },
+
+  // Stat tags
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
+  statTag: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
   },
-  statText: {
-    ...Typography.small,
-    color: Colors.text.disabled,
-  },
-  dot: {
-    color: Colors.text.disabled,
-    fontSize: 12,
-  },
+  tagBlue: { backgroundColor: '#EFF6FF' },
+  tagGreen: { backgroundColor: '#F0FDF4' },
+  tagText: { fontSize: 11, fontWeight: '600' },
 });

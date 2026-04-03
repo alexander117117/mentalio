@@ -6,45 +6,70 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
-import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
+import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../src/constants/theme';
 import { useChatStore } from '../../src/store/chatStore';
 import { Chat } from '../../src/types';
 
 function formatTime(iso: string) {
   const d = new Date(iso);
   const now = new Date();
-  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffMins < 1) return 'Сейчас';
+  if (diffMins < 60) return `${diffMins}м`;
   if (diffDays === 0) return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
   if (diffDays === 1) return 'Вчера';
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 }
 
-function ChatRow({ chat }: { chat: Chat }) {
+function ChatCard({ chat }: { chat: Chat }) {
+  const hasUnread = false; // TODO: unread tracking
+
   return (
     <TouchableOpacity
-      style={styles.chatRow}
-      activeOpacity={0.7}
+      style={styles.card}
+      activeOpacity={0.75}
       onPress={() => router.push(`/chat/${chat.id}` as any)}
     >
-      <View style={styles.chatThumb}>
+      {/* Avatar */}
+      <View style={styles.avatarWrap}>
         {chat.classroomThumbnail ? (
-          <Image source={{ uri: chat.classroomThumbnail }} style={styles.chatThumbImg} />
+          <Image source={{ uri: chat.classroomThumbnail }} style={styles.avatarImg} />
         ) : (
-          <Ionicons name="chatbubbles-outline" size={22} color={Colors.text.disabled} />
+          <View style={styles.avatarFallback}>
+            <Ionicons name="chatbubbles-outline" size={22} color={Colors.primary} />
+          </View>
         )}
       </View>
-      <View style={styles.chatInfo}>
-        <View style={styles.chatTopRow}>
-          <Text style={styles.chatName} numberOfLines={1}>{chat.name}</Text>
+
+      {/* Content */}
+      <View style={styles.content}>
+        {/* Badge row */}
+        <View style={styles.badgeRow}>
+          <View style={[styles.badge, chat.isDM && styles.badgeDM]}>
+            <View style={[styles.badgeDot, chat.isDM && styles.badgeDotDM]} />
+            <Text style={[styles.badgeText, chat.isDM && styles.badgeTextDM]}>
+              {chat.isDM ? 'ЛИЧНОЕ' : chat.classroomId ? 'ЧАТ КУРСА' : 'ЧАТ'}
+            </Text>
+          </View>
           {chat.lastMessage && (
-            <Text style={styles.chatTime}>{formatTime(chat.lastMessage.createdAt)}</Text>
+            <Text style={styles.time}>{formatTime(chat.lastMessage.createdAt)}</Text>
           )}
         </View>
-        <Text style={styles.chatLast} numberOfLines={1}>
-          {chat.lastMessage
-            ? `${chat.lastMessage.userName}: ${chat.lastMessage.content}`
-            : 'Нет сообщений'}
-        </Text>
+
+        {/* Name */}
+        <Text style={styles.name} numberOfLines={1}>{chat.name}</Text>
+
+        {/* Last message */}
+        <View style={styles.lastRow}>
+          <Text style={styles.lastMsg} numberOfLines={1}>
+            {chat.lastMessage
+              ? `${chat.lastMessage.userName}: ${chat.lastMessage.content}`
+              : 'Нет сообщений'}
+          </Text>
+          {hasUnread && <View style={styles.unreadDot} />}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -63,43 +88,61 @@ export default function ChatsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Сообщения</Text>
-      </View>
-
-      <View style={styles.searchWrap}>
-        <View style={styles.searchRow}>
-          <Ionicons name="search-outline" size={16} color={Colors.text.disabled} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Поиск по чатам..."
-            placeholderTextColor={Colors.text.disabled}
-            value={search}
-            onChangeText={setSearch}
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color={Colors.text.disabled} />
-            </TouchableOpacity>
-          )}
+        <View>
+          <Text style={styles.headerSub}>Общение</Text>
+          <Text style={styles.headerTitle}>Сообщения</Text>
         </View>
+        <TouchableOpacity
+          style={styles.composeBtn}
+          activeOpacity={0.8}
+          onPress={() => router.push('/chat/new' as any)}
+        >
+          <Ionicons name="create-outline" size={18} color={Colors.text.inverse} />
+          <Text style={styles.composeBtnText}>Написать</Text>
+        </TouchableOpacity>
       </View>
 
+      {/* Search */}
+      <View style={styles.searchWrap}>
+        <Ionicons name="search-outline" size={15} color={Colors.text.disabled} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Поиск по чатам..."
+          placeholderTextColor={Colors.text.disabled}
+          value={search}
+          onChangeText={setSearch}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')}>
+            <Ionicons name="close-circle" size={15} color={Colors.text.disabled} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* List */}
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ChatRow chat={item} />}
-        contentContainerStyle={filtered.length === 0 ? { flex: 1 } : undefined}
+        renderItem={({ item }) => <ChatCard chat={item} />}
+        contentContainerStyle={[
+          styles.list,
+          filtered.length === 0 && { flex: 1 },
+        ]}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="chatbubble-outline" size={44} color={Colors.text.disabled} />
-            <Text style={styles.emptyTitle}>Нет сообщений</Text>
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="chatbubble-ellipses-outline" size={36} color={Colors.primary} />
+            </View>
+            <Text style={styles.emptyTitle}>Нет чатов</Text>
             <Text style={styles.emptySubtitle}>
-              Чаты создаются при создании курса
+              Чаты появляются при создании курса
             </Text>
           </View>
         }
-        showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );
@@ -107,59 +150,171 @@ export default function ChatsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+
+  // Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingVertical: 14,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    paddingTop: Spacing.sm,
+    paddingBottom: 16,
   },
-  title: { ...Typography.h2, color: Colors.text.primary },
-  searchWrap: { padding: Spacing.md, paddingBottom: Spacing.sm, backgroundColor: Colors.surface },
-  searchRow: {
+  headerSub: {
+    fontSize: 11,
+    color: Colors.text.disabled,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: Colors.text.primary,
+    marginTop: 2,
+  },
+  composeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: BorderRadius.md,
+  },
+  composeBtnText: { fontSize: 14, fontWeight: '600', color: Colors.text.inverse },
+
+  // Search
+  searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.background,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: 10,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  searchInput: { flex: 1, ...Typography.body, color: Colors.text.primary, padding: 0 },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.text.primary,
+    padding: 0,
+  },
 
-  chatRow: {
+  // List
+  list: { paddingHorizontal: Spacing.md, gap: Spacing.sm, paddingBottom: 24 },
+
+  // Card
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 12,
+    gap: 14,
     backgroundColor: Colors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
+    borderRadius: BorderRadius.xl,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
-  chatThumb: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.surfaceSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
+
+  // Avatar
+  avatarWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     overflow: 'hidden',
     flexShrink: 0,
   },
-  chatThumbImg: { width: '100%', height: '100%' },
-  chatInfo: { flex: 1 },
-  chatTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 },
-  chatName: { fontSize: 15, fontWeight: '600', color: Colors.text.primary, flex: 1 },
-  chatTime: { fontSize: 12, color: Colors.text.disabled, marginLeft: 8 },
-  chatLast: { fontSize: 13, color: Colors.text.secondary },
+  avatarImg: { width: '100%', height: '100%' },
+  avatarFallback: {
+    flex: 1,
+    backgroundColor: `${Colors.primary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingHorizontal: Spacing.xl },
+  // Content
+  content: { flex: 1, gap: 3 },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  badgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.primary,
+    letterSpacing: 0.5,
+  },
+  badgeDM: { backgroundColor: 'transparent' },
+  badgeDotDM: { backgroundColor: '#8B5CF6' },
+  badgeTextDM: { color: '#8B5CF6' },
+  time: {
+    fontSize: 12,
+    color: Colors.text.disabled,
+    fontWeight: '500',
+  },
+  name: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.text.primary,
+    lineHeight: 20,
+  },
+  lastRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  lastMsg: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.text.secondary,
+    lineHeight: 18,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.primary,
+    flexShrink: 0,
+  },
+
+  // Empty
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: `${Colors.primary}12`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
   emptyTitle: { ...Typography.h3, color: Colors.text.primary },
-  emptySubtitle: { ...Typography.body, color: Colors.text.secondary, textAlign: 'center' },
+  emptySubtitle: {
+    ...Typography.body,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
 });

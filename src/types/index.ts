@@ -58,6 +58,7 @@ export interface Classroom {
   name: string;
   description: string;
   thumbnail?: string;
+  tags: string[];
   instructor: User;
   coursesCount: number;
   studentsCount: number;
@@ -122,6 +123,10 @@ export interface Lesson {
 export interface Chat {
   id: string;
   name: string;
+  description?: string;
+  isDM?: boolean;
+  dmUserId?: string;
+  dmUserAvatar?: string;
   classroomId?: string;
   classroomThumbnail?: string;
   createdBy: string;

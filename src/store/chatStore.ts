@@ -8,7 +8,8 @@ interface ChatStore {
   isLoading: boolean;
 
   fetchChats: () => Promise<void>;
-  createChat: (name: string, classroomId?: string) => Promise<string>;
+  createChat: (name: string, description?: string, classroomId?: string) => Promise<string>;
+  startDM: (targetUserId: string, targetName: string) => Promise<string>;
   fetchMessages: (chatId: string) => Promise<void>;
   sendMessage: (chatId: string, content: string) => Promise<void>;
   addMember: (chatId: string, userId: string) => Promise<void>;
@@ -68,6 +69,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         return {
           id: chat.id,
           name: chat.name,
+          isDM: chat.is_dm ?? false,
           classroomId: chat.classroom_id ?? undefined,
           classroomThumbnail: chat.classrooms?.thumbnail_url ?? undefined,
           createdBy: chat.created_by,
@@ -82,13 +84,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set({ chats, isLoading: false });
   },
 
-  createChat: async (name, classroomId) => {
+  createChat: async (name, description, classroomId) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('unauthenticated');
 
     const { data: chat, error } = await supabase
       .from('chats')
-      .insert({ name, classroom_id: classroomId ?? null, created_by: user.id })
+      .insert({ name, description: description ?? null, classroom_id: classroomId ?? null, created_by: user.id })
       .select('*, classrooms(thumbnail_url)')
       .single();
     if (error) throw new Error(error.message);
@@ -99,6 +101,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     const newChat: Chat = {
       id: chat.id,
       name: chat.name,
+      description: chat.description ?? undefined,
       classroomId: chat.classroom_id ?? undefined,
       classroomThumbnail: chat.classrooms?.thumbnail_url ?? undefined,
       createdBy: chat.created_by,
@@ -180,5 +183,64 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   addMember: async (chatId, userId) => {
     await supabase.from('chat_members').upsert({ chat_id: chatId, user_id: userId });
+  },
+
+  startDM: async (targetUserId, targetName) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('unauthenticated');
+
+    // Check if a DM already exists between these two users
+    // Find all chats where current user is member
+    const { data: myMemberships } = await supabase
+      .from('chat_members')
+      .select('chat_id')
+      .eq('user_id', user.id);
+    const myChatIds = (myMemberships ?? []).map((m: any) => m.chat_id);
+
+    // Find all chats where target user is also member
+    if (myChatIds.length > 0) {
+      const { data: targetMemberships } = await supabase
+        .from('chat_members')
+        .select('chat_id')
+        .eq('user_id', targetUserId)
+        .in('chat_id', myChatIds);
+      const sharedIds = (targetMemberships ?? []).map((m: any) => m.chat_id);
+
+      // Check if any shared chat has no classroom (i.e. it's a DM)
+      if (sharedIds.length > 0) {
+        const { data: dmChats } = await supabase
+          .from('chats')
+          .select('id')
+          .in('id', sharedIds)
+          .is('classroom_id', null);
+        if ((dmChats ?? []).length > 0) {
+          return dmChats![0].id;
+        }
+      }
+    }
+
+    // Create new DM chat
+    const { data: chat, error } = await supabase
+      .from('chats')
+      .insert({ name: targetName, created_by: user.id })
+      .select('id, name, created_by, created_at')
+      .single();
+    if (error) throw new Error(error.message);
+
+    const { error: membersError } = await supabase.from('chat_members').insert([
+      { chat_id: chat.id, user_id: user.id },
+      { chat_id: chat.id, user_id: targetUserId },
+    ]);
+    if (membersError) throw new Error(membersError.message);
+
+    const newChat: Chat = {
+      id: chat.id,
+      name: chat.name,
+      isDM: true,
+      createdBy: chat.created_by,
+      createdAt: chat.created_at,
+    };
+    set({ chats: [newChat, ...get().chats] });
+    return chat.id;
   },
 }));
