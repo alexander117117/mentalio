@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Check, Clock, Paperclip, CaretRight } from 'phosphor-react-native';
 import { Lesson } from '../../types';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 
@@ -18,7 +18,7 @@ export default function LessonItem({ lesson, onPress }: Props) {
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
       <View style={[styles.number, lesson.isCompleted && styles.completed]}>
         {lesson.isCompleted ? (
-          <Ionicons name="checkmark" size={14} color={Colors.surface} />
+          <Check size={14} color={Colors.surface} weight="bold" />
         ) : (
           <Text style={styles.numberText}>{lesson.order}</Text>
         )}
@@ -26,17 +26,17 @@ export default function LessonItem({ lesson, onPress }: Props) {
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={2}>{lesson.title}</Text>
         <View style={styles.meta}>
-          <Ionicons name="time-outline" size={12} color={Colors.text.disabled} />
+          <Clock size={12} color={Colors.text.disabled} weight="regular" />
           <Text style={styles.duration}>{durationText}</Text>
           {lesson.materials.length > 0 && (
             <>
-              <Ionicons name="attach-outline" size={12} color={Colors.text.disabled} />
+              <Paperclip size={12} color={Colors.text.disabled} weight="regular" />
               <Text style={styles.duration}>{lesson.materials.length} материалов</Text>
             </>
           )}
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={16} color={Colors.text.disabled} />
+      <CaretRight size={16} color={Colors.text.disabled} weight="regular" />
     </TouchableOpacity>
   );
 }

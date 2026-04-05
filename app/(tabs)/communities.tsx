@@ -1,6 +1,6 @@
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Plus, MagnifyingGlass } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
@@ -28,7 +28,7 @@ export default function CommunitiesScreen() {
           style={styles.addBtn}
           onPress={() => router.push('/community/create' as any)}
         >
-          <Ionicons name="add" size={20} color={Colors.text.primary} />
+          <Plus size={20} color={Colors.text.primary} weight="bold" />
         </TouchableOpacity>
       </View>
 
@@ -49,7 +49,7 @@ export default function CommunitiesScreen() {
 
       {/* Search */}
       <View style={styles.searchRow}>
-        <Ionicons name="search-outline" size={16} color={Colors.text.disabled} />
+        <MagnifyingGlass size={16} color={Colors.text.disabled} weight="regular" />
         <TextInput
           style={styles.searchInput}
           placeholder="Поиск..."

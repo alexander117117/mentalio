@@ -1,14 +1,14 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { File, Link, Paperclip, DownloadSimple } from 'phosphor-react-native';
 import * as Linking from 'expo-linking';
 import { Material } from '../../types';
 import { Colors, Spacing, Typography, BorderRadius } from '../../constants/theme';
 
-const ICONS: Record<string, { icon: string; color: string }> = {
-  pdf: { icon: 'document-text-outline', color: '#EF4444' },
-  link: { icon: 'link-outline', color: Colors.primary },
-  file: { icon: 'attach-outline', color: Colors.warning },
+const COLORS: Record<string, string> = {
+  pdf: '#EF4444',
+  link: Colors.primary,
+  file: Colors.warning,
 };
 
 interface Props {
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export default function MaterialItem({ material }: Props) {
-  const { icon, color } = ICONS[material.type];
+  const color = COLORS[material.type] ?? Colors.text.secondary;
 
   return (
     <TouchableOpacity
@@ -25,13 +25,18 @@ export default function MaterialItem({ material }: Props) {
       activeOpacity={0.7}
     >
       <View style={[styles.icon, { backgroundColor: `${color}15` }]}>
-        <Ionicons name={icon as any} size={18} color={color} />
+        {material.type === 'pdf'
+          ? <File size={18} color={color} weight="regular" />
+          : material.type === 'link'
+            ? <Link size={18} color={color} weight="regular" />
+            : <Paperclip size={18} color={color} weight="regular" />
+        }
       </View>
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={1}>{material.title}</Text>
         <Text style={styles.type}>{material.type.toUpperCase()}</Text>
       </View>
-      <Ionicons name="download-outline" size={16} color={Colors.text.disabled} />
+      <DownloadSimple size={16} color={Colors.text.disabled} weight="regular" />
     </TouchableOpacity>
   );
 }

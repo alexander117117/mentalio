@@ -3,7 +3,7 @@ import {
   Image, ScrollView, Animated, Dimensions, FlatList, Easing,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { CalendarBlank, GraduationCap, Users, Book, CaretRight, Compass, List, X as CloseIcon, MagnifyingGlass, XCircle, YoutubeLogo, VideoCamera, Broadcast } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useRef, useState, useEffect } from 'react';
 
@@ -35,11 +35,6 @@ function buildWeek() {
 const DAY_NAMES = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 const MONTH_NAMES = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 
-const PLATFORM_ICONS: Record<string, string> = {
-  youtube: 'logo-youtube',
-  zoom: 'videocam-outline',
-  other: 'radio-outline',
-};
 
 function CalendarStrip({ streams }: { streams: LiveStream[] }) {
   const today = new Date();
@@ -138,7 +133,7 @@ function CalendarStrip({ streams }: { streams: LiveStream[] }) {
               </Text>
               {dayEvents.length === 0 ? (
                 <View style={calStyles.emptyRow}>
-                  <Ionicons name="calendar-outline" size={14} color="rgba(255,255,255,0.5)" />
+                  <CalendarBlank size={14} color="rgba(255,255,255,0.5)" weight="regular" />
                   <Text style={calStyles.emptyText}>Нет запланированных мероприятий</Text>
                 </View>
               ) : (
@@ -158,7 +153,7 @@ function CalendarStrip({ streams }: { streams: LiveStream[] }) {
                         </Text>
                       )}
                     </View>
-                    <Ionicons name={PLATFORM_ICONS[ev.platform] as any} size={14} color="rgba(255,255,255,0.45)" />
+                    {ev.platform === 'youtube' ? <YoutubeLogo size={14} color="rgba(255,255,255,0.45)" weight="regular" /> : ev.platform === 'zoom' ? <VideoCamera size={14} color="rgba(255,255,255,0.45)" weight="regular" /> : <Broadcast size={14} color="rgba(255,255,255,0.45)" weight="regular" />}
                   </TouchableOpacity>
                 ))
               )}
@@ -241,7 +236,7 @@ function CourseCard({ classroom }: { classroom: Classroom }) {
           <Image source={{ uri: classroom.thumbnail }} style={cardStyles.thumbImg} />
         ) : (
           <View style={cardStyles.thumbPlaceholder}>
-            <Ionicons name="school-outline" size={22} color={Colors.text.disabled} />
+            <GraduationCap size={22} color={Colors.text.disabled} weight="regular" />
           </View>
         )}
         {!classroom.isPublic && (
@@ -272,10 +267,10 @@ function CourseCard({ classroom }: { classroom: Classroom }) {
           <Text style={cardStyles.instructorName}>{classroom.instructor.name}</Text>
         </View>
         <View style={cardStyles.meta}>
-          <Ionicons name="people-outline" size={11} color={Colors.text.disabled} />
+          <Users size={11} color={Colors.text.disabled} weight="regular" />
           <Text style={cardStyles.metaText}>{classroom.studentsCount} студентов</Text>
           <View style={cardStyles.metaDot} />
-          <Ionicons name="book-outline" size={11} color={Colors.text.disabled} />
+          <Book size={11} color={Colors.text.disabled} weight="regular" />
           <Text style={cardStyles.metaText}>{classroom.coursesCount} курсов</Text>
         </View>
       </View>
@@ -354,7 +349,7 @@ function DrawerContent({
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         {myClassrooms.length === 0 ? (
           <View style={drawerStyles.empty}>
-            <Ionicons name="school-outline" size={28} color={Colors.text.disabled} />
+            <GraduationCap size={28} color={Colors.text.disabled} weight="regular" />
             <Text style={drawerStyles.emptyText}>Вы не записаны ни на один курс</Text>
           </View>
         ) : (
@@ -368,14 +363,14 @@ function DrawerContent({
               <View style={drawerStyles.courseThumb}>
                 {c.thumbnail
                   ? <Image source={{ uri: c.thumbnail }} style={drawerStyles.courseThumbImg} />
-                  : <Ionicons name="school-outline" size={18} color={Colors.text.disabled} />
+                  : <GraduationCap size={18} color={Colors.text.disabled} weight="regular" />
                 }
               </View>
               <View style={drawerStyles.rowInfo}>
                 <Text style={drawerStyles.rowName} numberOfLines={1}>{c.name}</Text>
                 <Text style={drawerStyles.rowSub}>{c.instructor.name}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={14} color={Colors.text.disabled} />
+              <CaretRight size={14} color={Colors.text.disabled} weight="regular" />
             </TouchableOpacity>
           ))
         )}
@@ -388,7 +383,7 @@ function DrawerContent({
           onPress={() => { closeDrawer(); router.push('/(tabs)/classrooms' as any); }}
         >
           <View style={drawerStyles.footerIcon}>
-            <Ionicons name="compass-outline" size={18} color={Colors.primary} />
+            <Compass size={18} color={Colors.primary} weight="regular" />
           </View>
           <Text style={drawerStyles.footerText}>Обзор курсов</Text>
         </TouchableOpacity>
@@ -541,7 +536,7 @@ export default function HomeScreen() {
             style={styles.burgerBtn}
             activeOpacity={0.8}
           >
-            <Ionicons name={drawerOpen ? 'close' : 'menu'} size={22} color={Colors.text.primary} />
+            {drawerOpen ? <CloseIcon size={22} color={Colors.text.primary} weight="regular" /> : <List size={22} color={Colors.text.primary} weight="regular" />}
           </TouchableOpacity>
 
           <Text style={styles.monthLabel}>{monthYear}</Text>
@@ -559,7 +554,7 @@ export default function HomeScreen() {
       <View style={styles.sheet}>
         {/* Search bar */}
         <View style={styles.searchRow}>
-          <Ionicons name="search-outline" size={17} color={Colors.text.disabled} />
+          <MagnifyingGlass size={17} color={Colors.text.disabled} weight="regular" />
           <TextInput
             style={styles.searchInput}
             placeholder="Поиск курсов..."
@@ -569,7 +564,7 @@ export default function HomeScreen() {
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={17} color={Colors.text.disabled} />
+              <XCircle size={17} color={Colors.text.disabled} weight="fill" />
             </TouchableOpacity>
           )}
         </View>

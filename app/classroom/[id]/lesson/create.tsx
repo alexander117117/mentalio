@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { X, Play, CaretUp, CaretDown, CheckCircle, UploadSimple, Paperclip, File, Link, Question, Trash, Plus, PlusCircle } from 'phosphor-react-native';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -221,7 +221,7 @@ export default function LessonCreateScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color={Colors.text.primary} />
+          <X size={24} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{existingLesson ? 'Редактировать урок' : 'Новый урок'}</Text>
         <TouchableOpacity onPress={() => handleSave(true)} disabled={saving}>
@@ -256,18 +256,17 @@ export default function LessonCreateScreen() {
         >
           <View style={styles.accordionLeft}>
             <View style={[styles.accordionIcon, hasVideo && styles.accordionIconDone]}>
-              <Ionicons name="play" size={16} color={hasVideo ? Colors.text.inverse : Colors.text.secondary} />
+              <Play size={16} color={hasVideo ? Colors.text.inverse : Colors.text.secondary} weight="fill" />
             </View>
             <View>
               <Text style={styles.accordionTitle}>Видео</Text>
               <Text style={styles.accordionSub}>{hasVideo ? 'Добавлено' : 'Не добавлено'}</Text>
             </View>
           </View>
-          <Ionicons
-            name={activeSection === 'video' ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={Colors.text.disabled}
-          />
+          {activeSection === 'video'
+            ? <CaretUp size={18} color={Colors.text.disabled} weight="regular" />
+            : <CaretDown size={18} color={Colors.text.disabled} weight="regular" />
+          }
         </TouchableOpacity>
 
         {activeSection === 'video' && (
@@ -299,11 +298,10 @@ export default function LessonCreateScreen() {
               />
             ) : (
               <TouchableOpacity style={styles.uploadBtn} onPress={pickVideo}>
-                <Ionicons
-                  name={videoLocalUri ? 'checkmark-circle' : 'cloud-upload-outline'}
-                  size={24}
-                  color={videoLocalUri ? Colors.success : Colors.text.secondary}
-                />
+                {videoLocalUri
+                  ? <CheckCircle size={24} color={Colors.success} weight="fill" />
+                  : <UploadSimple size={24} color={Colors.text.secondary} weight="regular" />
+                }
                 <Text style={styles.uploadText}>
                   {videoLocalUri ? 'Видео выбрано ✓' : 'Выбрать видео из галереи'}
                 </Text>
@@ -320,7 +318,7 @@ export default function LessonCreateScreen() {
         >
           <View style={styles.accordionLeft}>
             <View style={[styles.accordionIcon, materials.length > 0 && styles.accordionIconDone]}>
-              <Ionicons name="attach" size={16} color={materials.length > 0 ? Colors.text.inverse : Colors.text.secondary} />
+              <Paperclip size={16} color={materials.length > 0 ? Colors.text.inverse : Colors.text.secondary} weight="fill" />
             </View>
             <View>
               <Text style={styles.accordionTitle}>Материалы</Text>
@@ -329,36 +327,36 @@ export default function LessonCreateScreen() {
               </Text>
             </View>
           </View>
-          <Ionicons
-            name={activeSection === 'materials' ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={Colors.text.disabled}
-          />
+          {activeSection === 'materials'
+            ? <CaretUp size={18} color={Colors.text.disabled} weight="regular" />
+            : <CaretDown size={18} color={Colors.text.disabled} weight="regular" />
+          }
         </TouchableOpacity>
 
         {activeSection === 'materials' && (
           <View style={styles.accordionBody}>
             {materials.map((m) => (
               <View key={m.id} style={styles.materialRow}>
-                <Ionicons
-                  name={m.type === 'pdf' ? 'document-text-outline' : m.type === 'link' ? 'link-outline' : 'attach-outline'}
-                  size={16}
-                  color={Colors.text.secondary}
-                />
+                {m.type === 'pdf'
+                  ? <File size={16} color={Colors.text.secondary} weight="regular" />
+                  : m.type === 'link'
+                    ? <Link size={16} color={Colors.text.secondary} weight="regular" />
+                    : <Paperclip size={16} color={Colors.text.secondary} weight="regular" />
+                }
                 <Text style={styles.materialTitle} numberOfLines={1}>{m.title}</Text>
                 <TouchableOpacity onPress={() => removeMaterial(m.id)}>
-                  <Ionicons name="close-circle" size={18} color={Colors.text.disabled} />
+                  <X size={18} color={Colors.text.disabled} weight="fill" />
                 </TouchableOpacity>
               </View>
             ))}
 
             <View style={styles.materialActions}>
               <TouchableOpacity style={styles.materialActionBtn} onPress={() => setMaterialModalVisible(true)}>
-                <Ionicons name="link-outline" size={16} color={Colors.text.primary} />
+                <Link size={16} color={Colors.text.primary} weight="regular" />
                 <Text style={styles.materialActionText}>Добавить ссылку</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.materialActionBtn} onPress={pickDocument}>
-                <Ionicons name="document-outline" size={16} color={Colors.text.primary} />
+                <File size={16} color={Colors.text.primary} weight="regular" />
                 <Text style={styles.materialActionText}>Прикрепить файл</Text>
               </TouchableOpacity>
             </View>
@@ -373,7 +371,7 @@ export default function LessonCreateScreen() {
         >
           <View style={styles.accordionLeft}>
             <View style={[styles.accordionIcon, quizEnabled && styles.accordionIconDone]}>
-              <Ionicons name="help-circle" size={16} color={quizEnabled ? Colors.text.inverse : Colors.text.secondary} />
+              <Question size={16} color={quizEnabled ? Colors.text.inverse : Colors.text.secondary} weight="fill" />
             </View>
             <View>
               <Text style={styles.accordionTitle}>Тест</Text>
@@ -382,11 +380,10 @@ export default function LessonCreateScreen() {
               </Text>
             </View>
           </View>
-          <Ionicons
-            name={activeSection === 'quiz' ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={Colors.text.disabled}
-          />
+          {activeSection === 'quiz'
+            ? <CaretUp size={18} color={Colors.text.disabled} weight="regular" />
+            : <CaretDown size={18} color={Colors.text.disabled} weight="regular" />
+          }
         </TouchableOpacity>
 
         {activeSection === 'quiz' && (
@@ -409,7 +406,7 @@ export default function LessonCreateScreen() {
                     <View style={styles.questionHeader}>
                       <Text style={styles.questionNum}>Вопрос {qi + 1}</Text>
                       <TouchableOpacity onPress={() => removeQuestion(q.id)}>
-                        <Ionicons name="trash-outline" size={16} color={Colors.error} />
+                        <Trash size={16} color={Colors.error} weight="regular" />
                       </TouchableOpacity>
                     </View>
 
@@ -448,14 +445,10 @@ export default function LessonCreateScreen() {
                           style={styles.optionCheck}
                           onPress={() => updateOption(q.id, opt.id, { isCorrect: !opt.isCorrect })}
                         >
-                          <Ionicons
-                            name={
-                              q.type === 'single'
-                                ? opt.isCorrect ? 'radio-button-on' : 'radio-button-off'
-                                : opt.isCorrect ? 'checkbox' : 'square-outline'
-                            }
+                          <CheckCircle
                             size={20}
                             color={opt.isCorrect ? Colors.success : Colors.text.disabled}
+                            weight={opt.isCorrect ? 'fill' : 'regular'}
                           />
                         </TouchableOpacity>
                         <TextInput
@@ -467,21 +460,21 @@ export default function LessonCreateScreen() {
                         />
                         {q.options.length > 2 && (
                           <TouchableOpacity onPress={() => removeOption(q.id, opt.id)}>
-                            <Ionicons name="close" size={16} color={Colors.text.disabled} />
+                            <X size={16} color={Colors.text.disabled} weight="regular" />
                           </TouchableOpacity>
                         )}
                       </View>
                     ))}
 
                     <TouchableOpacity style={styles.addOptionBtn} onPress={() => addOption(q.id)}>
-                      <Ionicons name="add" size={16} color={Colors.text.secondary} />
+                      <Plus size={16} color={Colors.text.secondary} weight="bold" />
                       <Text style={styles.addOptionText}>Добавить вариант</Text>
                     </TouchableOpacity>
                   </View>
                 ))}
 
                 <TouchableOpacity style={styles.addQuestionBtn} onPress={addQuestion}>
-                  <Ionicons name="add-circle-outline" size={20} color={Colors.text.primary} />
+                  <PlusCircle size={20} color={Colors.text.primary} weight="regular" />
                   <Text style={styles.addQuestionText}>Добавить вопрос</Text>
                 </TouchableOpacity>
               </>

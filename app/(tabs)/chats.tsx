@@ -3,7 +3,7 @@ import {
   TextInput, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { ChatsCircle, PencilSimple, MagnifyingGlass, XCircle, ChatCircleDots } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../src/constants/theme';
@@ -38,7 +38,7 @@ function ChatCard({ chat }: { chat: Chat }) {
           <Image source={{ uri: chat.classroomThumbnail }} style={styles.avatarImg} />
         ) : (
           <View style={styles.avatarFallback}>
-            <Ionicons name="chatbubbles-outline" size={22} color={Colors.primary} />
+            <ChatsCircle size={22} color={Colors.primary} weight="regular" />
           </View>
         )}
       </View>
@@ -100,14 +100,14 @@ export default function ChatsScreen() {
           activeOpacity={0.8}
           onPress={() => router.push('/chat/new' as any)}
         >
-          <Ionicons name="create-outline" size={18} color={Colors.text.inverse} />
+          <PencilSimple size={18} color={Colors.text.inverse} weight="regular" />
           <Text style={styles.composeBtnText}>Написать</Text>
         </TouchableOpacity>
       </View>
 
       {/* Search */}
       <View style={styles.searchWrap}>
-        <Ionicons name="search-outline" size={15} color={Colors.text.disabled} />
+        <MagnifyingGlass size={15} color={Colors.text.disabled} weight="regular" />
         <TextInput
           style={styles.searchInput}
           placeholder="Поиск по чатам..."
@@ -117,7 +117,7 @@ export default function ChatsScreen() {
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={15} color={Colors.text.disabled} />
+            <XCircle size={15} color={Colors.text.disabled} weight="fill" />
           </TouchableOpacity>
         )}
       </View>
@@ -135,7 +135,7 @@ export default function ChatsScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <View style={styles.emptyIconWrap}>
-              <Ionicons name="chatbubble-ellipses-outline" size={36} color={Colors.primary} />
+              <ChatCircleDots size={36} color={Colors.primary} weight="regular" />
             </View>
             <Text style={styles.emptyTitle}>Нет чатов</Text>
             <Text style={styles.emptySubtitle}>

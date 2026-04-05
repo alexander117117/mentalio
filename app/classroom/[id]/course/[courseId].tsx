@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { Check, Clock, PlayCircle, Paperclip, CheckCircle, CaretRight, ArrowLeft, Book } from 'phosphor-react-native';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../../../src/constants/theme';
 import { useClassroomStore } from '../../../../src/store/classroomStore';
 import { Lesson } from '../../../../src/types';
@@ -21,7 +21,7 @@ function LessonCard({ lesson, index, classroomId }: { lesson: Lesson; index: num
       {/* Left: number/check circle */}
       <View style={[styles.numCircle, lesson.isCompleted && styles.numCircleDone]}>
         {lesson.isCompleted ? (
-          <Ionicons name="checkmark" size={15} color="#fff" />
+          <Check size={15} color="#fff" weight="bold" />
         ) : (
           <Text style={styles.numText}>{index + 1}</Text>
         )}
@@ -33,25 +33,25 @@ function LessonCard({ lesson, index, classroomId }: { lesson: Lesson; index: num
         <View style={styles.cardMeta}>
           {lesson.duration > 0 && (
             <View style={styles.metaItem}>
-              <Ionicons name="time-outline" size={12} color={Colors.text.disabled} />
+              <Clock size={12} color={Colors.text.disabled} weight="regular" />
               <Text style={styles.metaText}>{durationText}</Text>
             </View>
           )}
           {lesson.videoUrl ? (
             <View style={styles.metaItem}>
-              <Ionicons name="play-circle-outline" size={12} color={Colors.primary} />
+              <PlayCircle size={12} color={Colors.primary} weight="regular" />
               <Text style={[styles.metaText, { color: Colors.primary }]}>Видео</Text>
             </View>
           ) : null}
           {lesson.materials.length > 0 && (
             <View style={styles.metaItem}>
-              <Ionicons name="attach-outline" size={12} color={Colors.text.disabled} />
+              <Paperclip size={12} color={Colors.text.disabled} weight="regular" />
               <Text style={styles.metaText}>{lesson.materials.length} файлов</Text>
             </View>
           )}
           {lesson.quiz && (
             <View style={styles.metaItem}>
-              <Ionicons name="checkmark-circle-outline" size={12} color={Colors.text.disabled} />
+              <CheckCircle size={12} color={Colors.text.disabled} weight="regular" />
               <Text style={styles.metaText}>Тест</Text>
             </View>
           )}
@@ -59,11 +59,10 @@ function LessonCard({ lesson, index, classroomId }: { lesson: Lesson; index: num
       </View>
 
       {/* Right: arrow */}
-      <Ionicons
-        name={lesson.isCompleted ? 'checkmark-circle' : 'chevron-forward'}
-        size={18}
-        color={lesson.isCompleted ? Colors.success : Colors.text.disabled}
-      />
+      {lesson.isCompleted
+        ? <CheckCircle size={18} color={Colors.success} weight="fill" />
+        : <CaretRight size={18} color={Colors.text.disabled} weight="regular" />
+      }
     </TouchableOpacity>
   );
 }
@@ -91,7 +90,7 @@ export default function CourseScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
+          <ArrowLeft size={22} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{course?.title ?? 'Курс'}</Text>
         <View style={{ width: 36 }} />
@@ -119,7 +118,7 @@ export default function CourseScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="book-outline" size={40} color={Colors.text.disabled} />
+            <Book size={40} color={Colors.text.disabled} weight="regular" />
             <Text style={styles.emptyText}>Уроки ещё не добавлены</Text>
           </View>
         }

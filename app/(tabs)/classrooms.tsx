@@ -3,7 +3,7 @@ import {
   Modal, Animated, Image, Pressable, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { X, GraduationCap, Plus, MagnifyingGlass } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
@@ -74,7 +74,7 @@ function CreateClassroomModal({
       <Animated.View style={[modalStyles.sheet, { transform: [{ translateY }] }]}>
         {/* Close button */}
         <TouchableOpacity style={modalStyles.closeBtn} onPress={onClose}>
-          <Ionicons name="close" size={20} color={Colors.text.secondary} />
+          <X size={20} color={Colors.text.secondary} weight="regular" />
         </TouchableOpacity>
 
         {/* Illustration */}
@@ -83,7 +83,7 @@ function CreateClassroomModal({
             <Image source={illustration} style={modalStyles.illustration} resizeMode="contain" />
           ) : (
             <View style={modalStyles.illustrationPlaceholder}>
-              <Ionicons name="school-outline" size={72} color={Colors.text.disabled} />
+              <GraduationCap size={72} color={Colors.text.disabled} weight="regular" />
             </View>
           )}
         </View>
@@ -103,7 +103,7 @@ function CreateClassroomModal({
           }}
           activeOpacity={0.85}
         >
-          <Ionicons name="add" size={20} color={Colors.text.inverse} />
+          <Plus size={20} color={Colors.text.inverse} weight="bold" />
           <Text style={modalStyles.createBtnText}>Создать классную комнату</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -217,7 +217,7 @@ export default function ClassroomsScreen() {
           style={styles.addBtn}
           onPress={() => setModalVisible(true)}
         >
-          <Ionicons name="add" size={20} color={Colors.text.primary} />
+          <Plus size={20} color={Colors.text.primary} weight="bold" />
         </TouchableOpacity>
       </View>
 
@@ -236,7 +236,7 @@ export default function ClassroomsScreen() {
       </View>
 
       <View style={styles.searchRow}>
-        <Ionicons name="search-outline" size={16} color={Colors.text.disabled} />
+        <MagnifyingGlass size={16} color={Colors.text.disabled} weight="regular" />
         <TextInput
           style={styles.searchInput}
           placeholder="Поиск..."

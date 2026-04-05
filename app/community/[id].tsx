@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, PencilSimple } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Colors, Spacing, Typography } from '../../src/constants/theme';
 import PostCard from '../../src/components/common/PostCard';
@@ -67,10 +67,10 @@ export default function CommunityScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+          <ArrowLeft size={24} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push(`/community/${id}/create-post` as any)}>
-          <Ionicons name="create-outline" size={24} color={Colors.primary} />
+          <PencilSimple size={24} color={Colors.primary} weight="regular" />
         </TouchableOpacity>
       </View>
 

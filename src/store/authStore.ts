@@ -13,6 +13,7 @@ interface AuthState {
   signOut: () => Promise<void>;
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   updateProfile: (data: Partial<Pick<User, 'name' | 'avatar' | 'bio'>>) => Promise<{ error: string | null }>;
+  setInstructor: (value: boolean) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -31,7 +32,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .single();
         if (profile) {
           set({
-            user: { id: profile.id, email: session.user.email!, name: profile.name, avatar: profile.avatar_url, bio: profile.bio, createdAt: profile.created_at },
+            user: { id: profile.id, email: session.user.email!, name: profile.name, avatar: profile.avatar_url, bio: profile.bio, isInstructor: profile.is_instructor ?? false, createdAt: profile.created_at },
             isAuthenticated: true,
           });
         }
@@ -51,7 +52,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .single();
         if (profile) {
           set({
-            user: { id: profile.id, email: session.user.email!, name: profile.name, avatar: profile.avatar_url, bio: profile.bio, createdAt: profile.created_at },
+            user: { id: profile.id, email: session.user.email!, name: profile.name, avatar: profile.avatar_url, bio: profile.bio, isInstructor: profile.is_instructor ?? false, createdAt: profile.created_at },
             isAuthenticated: true,
           });
         }
@@ -136,5 +137,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     return { error: null };
+  },
+
+  setInstructor: async (value) => {
+    const user = get().user;
+    if (!user) return;
+    // Update UI immediately so toggle responds instantly
+    set({ user: { ...user, isInstructor: value } });
+    // Persist to DB (requires: ALTER TABLE profiles ADD COLUMN is_instructor boolean DEFAULT false)
+    await supabase
+      .from('profiles')
+      .update({ is_instructor: value })
+      .eq('id', user.id);
   },
 }));

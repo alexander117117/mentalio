@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Image as ImageIcon, Camera, Book, Users, Plus, PlusCircle, PlayCircle, Paperclip, CheckCircle, CaretRight, ChatsCircle, Warning, Trash } from 'phosphor-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../../src/constants/theme';
 import { useClassroomStore } from '../../../src/store/classroomStore';
@@ -192,7 +192,7 @@ export default function ClassroomManageScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
+          <ArrowLeft size={22} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{classroom.name}</Text>
         <View style={{ width: 36 }} />
@@ -210,7 +210,7 @@ export default function ClassroomManageScreen() {
             <Image source={{ uri: classroom.thumbnail }} style={styles.thumbImg} />
           ) : (
             <View style={styles.thumbPlaceholder}>
-              <Ionicons name="image-outline" size={32} color={Colors.text.disabled} />
+              <ImageIcon size={32} color={Colors.text.disabled} weight="regular" />
             </View>
           )}
           <View style={styles.thumbOverlay}>
@@ -218,7 +218,7 @@ export default function ClassroomManageScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <View style={styles.thumbBtn}>
-                <Ionicons name="camera" size={15} color="#fff" />
+                <Camera size={15} color="#fff" weight="fill" />
                 <Text style={styles.thumbBtnText}>Изменить обложку</Text>
               </View>
             )}
@@ -229,11 +229,11 @@ export default function ClassroomManageScreen() {
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
             <View style={styles.infoStat}>
-              <Ionicons name="book-outline" size={15} color={Colors.primary} />
+              <Book size={15} color={Colors.primary} weight="regular" />
               <Text style={styles.infoStatText}>{myLessons.length} уроков</Text>
             </View>
             <View style={styles.infoStat}>
-              <Ionicons name="people-outline" size={15} color={Colors.primary} />
+              <Users size={15} color={Colors.primary} weight="regular" />
               <Text style={styles.infoStatText}>{classroom.studentsCount} студентов</Text>
             </View>
           </View>
@@ -279,7 +279,7 @@ export default function ClassroomManageScreen() {
             <TouchableOpacity style={styles.addBtn} onPress={handleAddLesson} disabled={loading} activeOpacity={0.7}>
               {loading
                 ? <ActivityIndicator size="small" color={Colors.text.primary} />
-                : <Ionicons name="add" size={16} color={Colors.text.primary} />
+                : <Plus size={16} color={Colors.text.primary} weight="bold" />
               }
               <Text style={styles.addBtnText}>Добавить</Text>
             </TouchableOpacity>
@@ -287,7 +287,7 @@ export default function ClassroomManageScreen() {
 
           {myLessons.length === 0 ? (
             <TouchableOpacity style={styles.emptyCard} onPress={handleAddLesson} disabled={loading} activeOpacity={0.7}>
-              <Ionicons name="add-circle-outline" size={36} color={Colors.text.disabled} />
+              <PlusCircle size={36} color={Colors.text.disabled} weight="regular" />
               <Text style={styles.emptyTitle}>Добавьте первый урок</Text>
               <Text style={styles.emptySubtitle}>Добавьте видео, материалы и тест</Text>
             </TouchableOpacity>
@@ -313,19 +313,19 @@ export default function ClassroomManageScreen() {
                       <View style={styles.lessonBadges}>
                         {lesson.videoUrl && (
                           <View style={styles.badge}>
-                            <Ionicons name="play-circle-outline" size={11} color={Colors.primary} />
+                            <PlayCircle size={11} color={Colors.primary} weight="regular" />
                             <Text style={[styles.badgeText, { color: Colors.primary }]}>Видео</Text>
                           </View>
                         )}
                         {lesson.materials.length > 0 && (
                           <View style={styles.badge}>
-                            <Ionicons name="attach-outline" size={11} color={Colors.text.secondary} />
+                            <Paperclip size={11} color={Colors.text.secondary} weight="regular" />
                             <Text style={styles.badgeText}>{lesson.materials.length} файлов</Text>
                           </View>
                         )}
                         {lesson.quiz && (
                           <View style={styles.badge}>
-                            <Ionicons name="checkmark-circle-outline" size={11} color={Colors.text.secondary} />
+                            <CheckCircle size={11} color={Colors.text.secondary} weight="regular" />
                             <Text style={styles.badgeText}>Тест</Text>
                           </View>
                         )}
@@ -337,7 +337,7 @@ export default function ClassroomManageScreen() {
                       </View>
                     </View>
 
-                    <Ionicons name="chevron-forward" size={16} color={Colors.text.disabled} />
+                    <CaretRight size={16} color={Colors.text.disabled} weight="regular" />
                   </TouchableOpacity>
                 );
               })}
@@ -354,13 +354,13 @@ export default function ClassroomManageScreen() {
               onPress={() => router.push(`/chat/${classroomChat.id}` as any)}
             >
               <View style={styles.chatBtnIcon}>
-                <Ionicons name="chatbubbles-outline" size={18} color={Colors.primary} />
+                <ChatsCircle size={18} color={Colors.primary} weight="regular" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.chatBtnTitle}>Чат курса</Text>
                 <Text style={styles.chatBtnSub}>Открыть чат со студентами</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={Colors.text.disabled} />
+              <CaretRight size={16} color={Colors.text.disabled} weight="regular" />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -370,7 +370,7 @@ export default function ClassroomManageScreen() {
               disabled={creatingChat}
             >
               <View style={styles.chatBtnIcon}>
-                <Ionicons name="add-circle-outline" size={18} color={Colors.primary} />
+                <PlusCircle size={18} color={Colors.primary} weight="regular" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.chatBtnTitle}>Создать чат</Text>
@@ -378,7 +378,7 @@ export default function ClassroomManageScreen() {
               </View>
               {creatingChat
                 ? <ActivityIndicator size="small" color={Colors.primary} />
-                : <Ionicons name="chevron-forward" size={16} color={Colors.text.disabled} />
+                : <CaretRight size={16} color={Colors.text.disabled} weight="regular" />
               }
             </TouchableOpacity>
           )}
@@ -387,7 +387,7 @@ export default function ClassroomManageScreen() {
         {/* Danger zone */}
         <View style={styles.section}>
           <TouchableOpacity style={styles.deleteBtn} onPress={showConfirm} activeOpacity={0.75}>
-            <Ionicons name="trash-outline" size={18} color={Colors.error} />
+            <Trash size={18} color={Colors.error} weight="regular" />
             <Text style={styles.deleteBtnText}>Удалить курс</Text>
           </TouchableOpacity>
         </View>
@@ -454,7 +454,7 @@ export default function ClassroomManageScreen() {
           <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={hideConfirm} />
           <Animated.View style={[styles.modalCard, { transform: [{ scale: scaleAnim }], opacity: opacityAnim }]}>
             <View style={styles.warningTag}>
-              <Ionicons name="warning-outline" size={13} color={Colors.error} />
+              <Warning size={13} color={Colors.error} weight="regular" />
               <Text style={styles.warningText}>Вы уверены, что хотите удалить курс?</Text>
             </View>
 

@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
+import { Camera } from 'phosphor-react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../src/constants/theme';
 import { useAuthStore } from '../src/store/authStore';
 import { notifySuccess, tapLight } from '../src/utils/haptics';
@@ -111,7 +111,7 @@ export default function OnboardingScreen() {
                 <>
                   <Image source={{ uri: avatar }} style={styles.avatar} />
                   <View style={styles.avatarOverlay}>
-                    <Ionicons name="camera" size={22} color="#fff" />
+                    <Camera size={22} color="#fff" weight="fill" />
                   </View>
                 </>
               ) : (
@@ -120,7 +120,7 @@ export default function OnboardingScreen() {
                     {displayName.charAt(0).toUpperCase() || '?'}
                   </Text>
                   <View style={styles.cameraBtn}>
-                    <Ionicons name="camera" size={14} color="#fff" />
+                    <Camera size={14} color="#fff" weight="fill" />
                   </View>
                 </View>
               )}

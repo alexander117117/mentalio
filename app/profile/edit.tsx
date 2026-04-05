@@ -3,7 +3,7 @@ import {
   ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Camera, WarningCircle } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
@@ -64,7 +64,7 @@ export default function EditProfileScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
+          <ArrowLeft size={22} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Редактировать профиль</Text>
         <TouchableOpacity
@@ -89,7 +89,7 @@ export default function EditProfileScreen() {
                 <>
                   <Image source={{ uri: avatar }} style={styles.avatarImg} />
                   <View style={styles.avatarOverlay}>
-                    <Ionicons name="camera" size={20} color="#fff" />
+                    <Camera size={20} color="#fff" weight="fill" />
                   </View>
                 </>
               ) : (
@@ -98,7 +98,7 @@ export default function EditProfileScreen() {
                     {name.charAt(0).toUpperCase() || '?'}
                   </Text>
                   <View style={styles.cameraBtn}>
-                    <Ionicons name="camera" size={13} color="#fff" />
+                    <Camera size={13} color="#fff" weight="fill" />
                   </View>
                 </View>
               )}
@@ -150,7 +150,7 @@ export default function EditProfileScreen() {
 
           {error && (
             <View style={styles.errorBox}>
-              <Ionicons name="alert-circle-outline" size={16} color={Colors.error} />
+              <WarningCircle size={16} color={Colors.error} weight="regular" />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}

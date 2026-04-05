@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { GraduationCap, Book, Users } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { Classroom } from '../../types';
 import Avatar from '../ui/Avatar';
@@ -23,7 +23,7 @@ export default function ClassroomCard({ classroom }: Props) {
           <Image source={{ uri: classroom.thumbnail }} style={styles.thumbnailImage} />
         ) : (
           <View style={styles.thumbnailPlaceholder}>
-            <Ionicons name="school-outline" size={28} color={Colors.text.disabled} />
+            <GraduationCap size={28} color={Colors.text.disabled} weight="regular" />
           </View>
         )}
         {!classroom.isPublic && (
@@ -59,11 +59,11 @@ export default function ClassroomCard({ classroom }: Props) {
 
         <View style={styles.stats}>
           <View style={[styles.statTag, styles.tagBlue]}>
-            <Ionicons name="book-outline" size={11} color="#3B82F6" />
+            <Book size={11} color="#3B82F6" weight="regular" />
             <Text style={[styles.tagText, { color: '#3B82F6' }]}>{classroom.coursesCount} курсов</Text>
           </View>
           <View style={[styles.statTag, styles.tagGreen]}>
-            <Ionicons name="people-outline" size={11} color="#16A34A" />
+            <Users size={11} color="#16A34A" weight="regular" />
             <Text style={[styles.tagText, { color: '#16A34A' }]}>{classroom.studentsCount.toLocaleString()} уч.</Text>
           </View>
         </View>

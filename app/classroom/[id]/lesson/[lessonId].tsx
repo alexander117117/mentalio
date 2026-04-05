@@ -5,7 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Play, VideoCameraSlash, Clock, CheckCircle, X } from 'phosphor-react-native';
 import * as Linking from 'expo-linking';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Colors, Spacing, Typography, BorderRadius } from '../../../../src/constants/theme';
@@ -102,7 +102,7 @@ export default function LessonScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+            <ArrowLeft size={24} color={Colors.text.primary} weight="regular" />
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
           <View style={{ width: 24 }} />
@@ -121,7 +121,7 @@ export default function LessonScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+          <ArrowLeft size={24} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{lesson.title}</Text>
         <View style={{ width: 24 }} />
@@ -138,14 +138,14 @@ export default function LessonScreen() {
       ) : lesson.videoUrl && isExternalLink(lesson.videoUrl) ? (
         <TouchableOpacity style={styles.videoCard} activeOpacity={0.85} onPress={openVideo}>
           <View style={styles.playBtn}>
-            <Ionicons name="play" size={32} color={Colors.text.inverse} />
+            <Play size={32} color={Colors.text.inverse} weight="fill" />
           </View>
           <Text style={styles.videoLabel}>Смотреть видео</Text>
           <Text style={styles.videoSub}>Откроется в YouTube / Vimeo</Text>
         </TouchableOpacity>
       ) : (
         <View style={[styles.videoCard, styles.videoCardEmpty]}>
-          <Ionicons name="videocam-off-outline" size={32} color={Colors.text.disabled} />
+          <VideoCameraSlash size={32} color={Colors.text.disabled} weight="regular" />
           <Text style={[styles.videoSub, { color: Colors.text.disabled }]}>Видео не добавлено</Text>
         </View>
       )}
@@ -157,13 +157,13 @@ export default function LessonScreen() {
           <View style={styles.lessonMeta}>
             {lesson.duration > 0 && (
               <View style={styles.metaItem}>
-                <Ionicons name="time-outline" size={14} color={Colors.text.disabled} />
+                <Clock size={14} color={Colors.text.disabled} weight="regular" />
                 <Text style={styles.metaText}>{minutes}:{seconds.toString().padStart(2, '0')}</Text>
               </View>
             )}
             {lesson.isCompleted && (
               <View style={styles.completedBadge}>
-                <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
+                <CheckCircle size={14} color={Colors.success} weight="fill" />
                 <Text style={styles.completedText}>Пройден</Text>
               </View>
             )}
@@ -190,11 +190,10 @@ export default function LessonScreen() {
                 styles.quizResult,
                 quizScore.correct === quizScore.total ? styles.quizResultPass : styles.quizResultFail,
               ]}>
-                <Ionicons
-                  name={quizScore.correct === quizScore.total ? 'checkmark-circle' : 'close-circle'}
-                  size={20}
-                  color={quizScore.correct === quizScore.total ? Colors.success : Colors.error}
-                />
+                {quizScore.correct === quizScore.total
+                  ? <CheckCircle size={20} color={Colors.success} weight="fill" />
+                  : <X size={20} color={Colors.error} weight="bold" />
+                }
                 <Text style={styles.quizResultText}>
                   {quizScore.correct} из {quizScore.total} правильно
                 </Text>
@@ -228,9 +227,6 @@ export default function LessonScreen() {
                       optStyle = { ...styles.option, ...styles.optionSelected };
                       checkColor = Colors.primary;
                     }
-                    const iconName = q.type === 'single'
-                      ? (isSelected ? 'radio-button-on' : 'radio-button-off')
-                      : (isSelected ? 'checkbox' : 'square-outline');
                     return (
                       <TouchableOpacity
                         key={opt.id}
@@ -239,7 +235,7 @@ export default function LessonScreen() {
                         onPress={() => toggleAnswer(q, opt.id)}
                         disabled={quizSubmitted}
                       >
-                        <Ionicons name={iconName as any} size={20} color={checkColor} />
+                        <CheckCircle size={20} color={checkColor} weight={isSelected ? 'fill' : 'regular'} />
                         <Text style={styles.optionText}>{opt.text}</Text>
                       </TouchableOpacity>
                     );

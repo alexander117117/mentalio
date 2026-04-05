@@ -3,7 +3,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Plus, PlusCircle, PlayCircle, Paperclip, CheckCircle, CaretRight, Trash, Warning } from 'phosphor-react-native';
 import { useRef, useState } from 'react';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../../../../src/constants/theme';
 import { useClassroomStore } from '../../../../../src/store/classroomStore';
@@ -54,7 +54,7 @@ export default function CourseManageScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
+          <ArrowLeft size={22} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{course?.title ?? 'Курс'}</Text>
         <View style={{ width: 36 }} />
@@ -75,7 +75,7 @@ export default function CourseManageScreen() {
               style={styles.addBtn}
               onPress={() => router.push(`/classroom/${id}/lesson/create?courseId=${courseId}` as any)}
             >
-              <Ionicons name="add" size={16} color={Colors.text.primary} />
+              <Plus size={16} color={Colors.text.primary} weight="bold" />
               <Text style={styles.addBtnText}>Добавить</Text>
             </TouchableOpacity>
           </View>
@@ -85,7 +85,7 @@ export default function CourseManageScreen() {
               style={styles.emptyCard}
               onPress={() => router.push(`/classroom/${id}/lesson/create?courseId=${courseId}` as any)}
             >
-              <Ionicons name="add-circle-outline" size={36} color={Colors.text.disabled} />
+              <PlusCircle size={36} color={Colors.text.disabled} weight="regular" />
               <Text style={styles.emptyTitle}>Добавьте первый урок</Text>
               <Text style={styles.emptySubtitle}>Добавьте видео, материалы и тест</Text>
             </TouchableOpacity>
@@ -107,19 +107,19 @@ export default function CourseManageScreen() {
                       <View style={styles.lessonBadges}>
                         {(lesson.videoUrl || lesson.videoLocalUri) && (
                           <View style={styles.badge}>
-                            <Ionicons name="play-circle-outline" size={11} color={Colors.text.secondary} />
+                            <PlayCircle size={11} color={Colors.text.secondary} weight="regular" />
                             <Text style={styles.badgeText}>Видео</Text>
                           </View>
                         )}
                         {lesson.materials.length > 0 && (
                           <View style={styles.badge}>
-                            <Ionicons name="attach-outline" size={11} color={Colors.text.secondary} />
+                            <Paperclip size={11} color={Colors.text.secondary} weight="regular" />
                             <Text style={styles.badgeText}>{lesson.materials.length} файлов</Text>
                           </View>
                         )}
                         {lesson.quiz && (
                           <View style={styles.badge}>
-                            <Ionicons name="checkmark-circle-outline" size={11} color={Colors.text.secondary} />
+                            <CheckCircle size={11} color={Colors.text.secondary} weight="regular" />
                             <Text style={styles.badgeText}>Тест</Text>
                           </View>
                         )}
@@ -131,7 +131,7 @@ export default function CourseManageScreen() {
                       </View>
                     </View>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.text.disabled} />
+                  <CaretRight size={16} color={Colors.text.disabled} weight="regular" />
                 </TouchableOpacity>
               ))}
             </View>
@@ -141,7 +141,7 @@ export default function CourseManageScreen() {
         {/* Danger zone */}
         <View style={styles.section}>
           <TouchableOpacity style={styles.deleteBtn} onPress={showConfirm} activeOpacity={0.75}>
-            <Ionicons name="trash-outline" size={18} color={Colors.error} />
+            <Trash size={18} color={Colors.error} weight="regular" />
             <Text style={styles.deleteBtnText}>Удалить курс</Text>
           </TouchableOpacity>
         </View>
@@ -156,7 +156,7 @@ export default function CourseManageScreen() {
           <Animated.View style={[styles.modalCard, { transform: [{ scale: scaleAnim }], opacity: opacityAnim }]}>
             {/* Red tag */}
             <View style={styles.warningTag}>
-              <Ionicons name="warning-outline" size={14} color={Colors.error} />
+              <Warning size={14} color={Colors.error} weight="regular" />
               <Text style={styles.warningText}>Вы уверены, что хотите удалить курс?</Text>
             </View>
 

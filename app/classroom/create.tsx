@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { X, Camera, Image as ImageIcon, CheckCircle, Globe, Lock, ChatsCircle } from 'phosphor-react-native';
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Spacing, BorderRadius, Shadows } from '../../src/constants/theme';
@@ -94,7 +94,7 @@ export default function CreateClassroomScreen() {
         {/* ── Top zone ── */}
         <View style={styles.topZone}>
           <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
-            <Ionicons name="close" size={22} color={Colors.text.primary} />
+            <X size={22} color={Colors.text.primary} weight="regular" />
           </TouchableOpacity>
           <View style={styles.topText}>
             <Text style={styles.topTitle}>Новый курс</Text>
@@ -116,7 +116,7 @@ export default function CreateClassroomScreen() {
                 <Image source={{ uri: thumbnail }} style={styles.thumbImage} />
                 <View style={styles.thumbOverlay}>
                   <View style={styles.thumbOverlayBtn}>
-                    <Ionicons name="camera" size={16} color="#fff" />
+                    <Camera size={16} color="#fff" weight="fill" />
                     <Text style={styles.thumbOverlayText}>Изменить</Text>
                   </View>
                 </View>
@@ -124,7 +124,7 @@ export default function CreateClassroomScreen() {
             ) : (
               <View style={styles.thumbEmpty}>
                 <View style={styles.thumbIconWrap}>
-                  <Ionicons name="image-outline" size={28} color={Colors.text.disabled} />
+                  <ImageIcon size={28} color={Colors.text.disabled} weight="regular" />
                 </View>
                 <Text style={styles.thumbEmptyTitle}>Добавить обложку</Text>
                 <Text style={styles.thumbEmptyHint}>16:9 · рекомендуется 1280×720</Text>
@@ -177,7 +177,7 @@ export default function CreateClassroomScreen() {
                       {tag.label}
                     </Text>
                     {selected && (
-                      <Ionicons name="checkmark-circle" size={14} color={tag.color} />
+                      <CheckCircle size={14} color={tag.color} weight="fill" />
                     )}
                   </TouchableOpacity>
                 );
@@ -189,7 +189,10 @@ export default function CreateClassroomScreen() {
           <View style={styles.switchRow}>
             <View style={styles.switchLeft}>
               <View style={styles.switchIconWrap}>
-                <Ionicons name={isPublic ? 'globe-outline' : 'lock-closed-outline'} size={18} color={Colors.primary} />
+                {isPublic
+                  ? <Globe size={18} color={Colors.primary} weight="regular" />
+                  : <Lock size={18} color={Colors.primary} weight="regular" />
+                }
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.switchLabel}>Открытый доступ</Text>
@@ -207,7 +210,7 @@ export default function CreateClassroomScreen() {
           <View style={styles.switchRow}>
             <View style={styles.switchLeft}>
               <View style={styles.switchIconWrap}>
-                <Ionicons name="chatbubbles-outline" size={18} color={Colors.primary} />
+                <ChatsCircle size={18} color={Colors.primary} weight="regular" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.switchLabel}>Создать чат</Text>

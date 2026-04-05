@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { X, YoutubeLogo, VideoCamera, Link } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import Input from '../../src/components/ui/Input';
@@ -9,10 +9,10 @@ import Button from '../../src/components/ui/Button';
 
 type Platform = 'youtube' | 'zoom' | 'other';
 
-const PLATFORMS: { key: Platform; label: string; icon: string }[] = [
-  { key: 'youtube', label: 'YouTube', icon: 'logo-youtube' },
-  { key: 'zoom', label: 'Zoom', icon: 'videocam-outline' },
-  { key: 'other', label: 'Другое', icon: 'link-outline' },
+const PLATFORMS: { key: Platform; label: string }[] = [
+  { key: 'youtube', label: 'YouTube' },
+  { key: 'zoom', label: 'Zoom' },
+  { key: 'other', label: 'Другое' },
 ];
 
 export default function CreateLiveScreen() {
@@ -35,7 +35,7 @@ export default function CreateLiveScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color={Colors.text.primary} />
+          <X size={24} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Новый эфир</Text>
         <View style={{ width: 24 }} />
@@ -67,11 +67,12 @@ export default function CreateLiveScreen() {
                 style={[styles.platformBtn, platform === p.key && styles.platformBtnActive]}
                 onPress={() => setPlatform(p.key)}
               >
-                <Ionicons
-                  name={p.icon as any}
-                  size={18}
-                  color={platform === p.key ? Colors.surface : Colors.text.secondary}
-                />
+                {p.key === 'youtube'
+                  ? <YoutubeLogo size={18} color={platform === p.key ? Colors.surface : Colors.text.secondary} weight="fill" />
+                  : p.key === 'zoom'
+                    ? <VideoCamera size={18} color={platform === p.key ? Colors.surface : Colors.text.secondary} weight="regular" />
+                    : <Link size={18} color={platform === p.key ? Colors.surface : Colors.text.secondary} weight="regular" />
+                }
                 <Text style={[styles.platformText, platform === p.key && styles.platformTextActive]}>
                   {p.label}
                 </Text>

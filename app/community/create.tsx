@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { X, Camera } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Colors, Spacing, Typography } from '../../src/constants/theme';
 import Input from '../../src/components/ui/Input';
@@ -26,7 +26,7 @@ export default function CreateCommunityScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color={Colors.text.primary} />
+          <X size={24} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Новое сообщество</Text>
         <View style={{ width: 24 }} />
@@ -34,7 +34,7 @@ export default function CreateCommunityScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <TouchableOpacity style={styles.avatarPicker}>
-          <Ionicons name="camera-outline" size={28} color={Colors.primary} />
+          <Camera size={28} color={Colors.primary} weight="regular" />
           <Text style={styles.avatarText}>Добавить аватар</Text>
         </TouchableOpacity>
 

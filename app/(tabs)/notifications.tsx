@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Bell } from 'phosphor-react-native';
 import { Colors, Spacing, Typography } from '../../src/constants/theme';
 
 export default function NotificationsScreen() {
@@ -10,7 +10,7 @@ export default function NotificationsScreen() {
         <Text style={styles.title}>Уведомления</Text>
       </View>
       <View style={styles.empty}>
-        <Ionicons name="notifications-outline" size={44} color={Colors.text.disabled} />
+        <Bell size={44} color={Colors.text.disabled} weight="regular" />
         <Text style={styles.emptyTitle}>Нет уведомлений</Text>
         <Text style={styles.emptySubtitle}>Здесь будут появляться уведомления об активности</Text>
       </View>

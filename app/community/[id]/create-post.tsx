@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { X } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Colors, Spacing, Typography, BorderRadius } from '../../../src/constants/theme';
 import Input from '../../../src/components/ui/Input';
@@ -24,7 +24,7 @@ export default function CreatePostScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color={Colors.text.primary} />
+          <X size={24} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Новый пост</Text>
         <Button title="Опубликовать" onPress={handleSubmit} style={styles.publishBtn} />

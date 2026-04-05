@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { GraduationCap, Users, Book, PlayCircle, PencilSimple, Eye, TrendUp, PlusCircle } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import { useClassroomStore } from '../../src/store/classroomStore';
@@ -34,7 +34,7 @@ function ClassroomManageCard({ classroom }: { classroom: Classroom }) {
           <Image source={{ uri: classroom.thumbnail }} style={cardStyles.thumbnailImg} />
         ) : (
           <View style={cardStyles.thumbnailPlaceholder}>
-            <Ionicons name="school-outline" size={24} color={Colors.text.disabled} />
+            <GraduationCap size={24} color={Colors.text.disabled} weight="regular" />
           </View>
         )}
         <View style={cardStyles.statusBadge}>
@@ -45,15 +45,15 @@ function ClassroomManageCard({ classroom }: { classroom: Classroom }) {
         <Text style={cardStyles.name} numberOfLines={1}>{classroom.name}</Text>
         <View style={cardStyles.statsRow}>
           <View style={cardStyles.stat}>
-            <Ionicons name="people-outline" size={12} color={Colors.text.secondary} />
+            <Users size={12} color={Colors.text.secondary} weight="regular" />
             <Text style={cardStyles.statText}>{classroom.studentsCount} студентов</Text>
           </View>
           <View style={cardStyles.stat}>
-            <Ionicons name="book-outline" size={12} color={Colors.text.secondary} />
+            <Book size={12} color={Colors.text.secondary} weight="regular" />
             <Text style={cardStyles.statText}>{myCourses.length} курсов</Text>
           </View>
           <View style={cardStyles.stat}>
-            <Ionicons name="play-circle-outline" size={12} color={Colors.text.secondary} />
+            <PlayCircle size={12} color={Colors.text.secondary} weight="regular" />
             <Text style={cardStyles.statText}>{myLessons.length} уроков</Text>
           </View>
         </View>
@@ -62,14 +62,14 @@ function ClassroomManageCard({ classroom }: { classroom: Classroom }) {
             style={cardStyles.btnPrimary}
             onPress={() => router.push(`/classroom/${classroom.id}/manage` as any)}
           >
-            <Ionicons name="create-outline" size={14} color={Colors.text.inverse} />
+            <PencilSimple size={14} color={Colors.text.inverse} weight="regular" />
             <Text style={cardStyles.btnPrimaryText}>Редактировать</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={cardStyles.btnSecondary}
             onPress={() => router.push(`/classroom/${classroom.id}` as any)}
           >
-            <Ionicons name="eye-outline" size={14} color={Colors.text.primary} />
+            <Eye size={14} color={Colors.text.primary} weight="regular" />
             <Text style={cardStyles.btnSecondaryText}>Просмотр</Text>
           </TouchableOpacity>
         </View>
@@ -170,7 +170,7 @@ export default function DashboardScreen() {
               <Text style={styles.revenueValue}>₽ 112 000</Text>
             </View>
             <View style={styles.revenueBadge}>
-              <Ionicons name="trending-up" size={13} color={Colors.success} />
+              <TrendUp size={13} color={Colors.success} weight="regular" />
               <Text style={styles.revenueBadgeText}>+51%</Text>
             </View>
           </View>
@@ -197,14 +197,14 @@ export default function DashboardScreen() {
         {/* Metrics grid */}
         <View style={styles.grid}>
           {[
-            { icon: 'people', label: 'Студентов', value: totalStudents.toLocaleString(), sub: '+124 за месяц', color: Colors.primary },
-            { icon: 'school', label: 'Классов', value: String(myClassrooms.length), color: Colors.primary },
-            { icon: 'book', label: 'Курсов', value: String(totalCourses), color: '#8B5CF6' },
-            { icon: 'play-circle', label: 'Уроков', value: String(totalLessons), color: '#F59E0B' },
+            { Icon: Users, label: 'Студентов', value: totalStudents.toLocaleString(), sub: '+124 за месяц', color: Colors.primary },
+            { Icon: GraduationCap, label: 'Классов', value: String(myClassrooms.length), color: Colors.primary },
+            { Icon: Book, label: 'Курсов', value: String(totalCourses), color: '#8B5CF6' },
+            { Icon: PlayCircle, label: 'Уроков', value: String(totalLessons), color: '#F59E0B' },
           ].map((m) => (
             <View key={m.label} style={styles.metricCard}>
               <View style={[styles.metricIcon, { backgroundColor: m.color + '18' }]}>
-                <Ionicons name={m.icon as any} size={18} color={m.color} />
+                <m.Icon size={18} color={m.color} weight="regular" />
               </View>
               <Text style={styles.metricValue}>{m.value}</Text>
               <Text style={styles.metricLabel}>{m.label}</Text>
@@ -276,7 +276,7 @@ export default function DashboardScreen() {
               style={styles.emptyCard}
               onPress={() => router.push('/classroom/create' as any)}
             >
-              <Ionicons name="add-circle-outline" size={36} color={Colors.text.disabled} />
+              <PlusCircle size={36} color={Colors.text.disabled} weight="regular" />
               <Text style={styles.emptyTitle}>Создайте первую классную комнату</Text>
             </TouchableOpacity>
           ) : (

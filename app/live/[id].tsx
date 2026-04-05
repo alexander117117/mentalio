@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Broadcast, Eye, CalendarBlank, Link } from 'phosphor-react-native';
 import * as Linking from 'expo-linking';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -22,7 +22,7 @@ export default function LiveScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-        <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+        <ArrowLeft size={24} color={Colors.text.primary} weight="regular" />
       </TouchableOpacity>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -30,7 +30,7 @@ export default function LiveScreen() {
           <Image source={{ uri: stream.thumbnail }} style={styles.thumbnail} />
         ) : (
           <View style={styles.thumbnailPlaceholder}>
-            <Ionicons name="radio-outline" size={48} color={Colors.primary} />
+            <Broadcast size={48} color={Colors.primary} weight="regular" />
           </View>
         )}
 
@@ -39,7 +39,7 @@ export default function LiveScreen() {
             <Badge status={stream.status} />
             {stream.viewersCount != null && (
               <View style={styles.viewers}>
-                <Ionicons name="eye-outline" size={14} color={Colors.text.secondary} />
+                <Eye size={14} color={Colors.text.secondary} weight="regular" />
                 <Text style={styles.viewersText}>{stream.viewersCount} зрителей</Text>
               </View>
             )}
@@ -60,7 +60,7 @@ export default function LiveScreen() {
 
           {stream.scheduledAt && stream.status === 'scheduled' && (
             <View style={styles.scheduleRow}>
-              <Ionicons name="calendar-outline" size={16} color={Colors.primary} />
+              <CalendarBlank size={16} color={Colors.primary} weight="regular" />
               <Text style={styles.scheduleText}>
                 {format(new Date(stream.scheduledAt), 'd MMMM yyyy, HH:mm', { locale: ru })}
               </Text>
@@ -68,7 +68,7 @@ export default function LiveScreen() {
           )}
 
           <View style={styles.platformRow}>
-            <Ionicons name="link-outline" size={16} color={Colors.text.secondary} />
+            <Link size={16} color={Colors.text.secondary} weight="regular" />
             <Text style={styles.platformText}>Платформа: {stream.platform}</Text>
           </View>
 

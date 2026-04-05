@@ -1,6 +1,6 @@
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Plus, Broadcast } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
@@ -31,7 +31,7 @@ export default function LiveScreen() {
           style={styles.addBtn}
           onPress={() => router.push('/live/create' as any)}
         >
-          <Ionicons name="add" size={20} color={Colors.text.primary} />
+          <Plus size={20} color={Colors.text.primary} weight="bold" />
         </TouchableOpacity>
       </View>
 
@@ -62,7 +62,7 @@ export default function LiveScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="radio-outline" size={40} color={Colors.text.disabled} />
+            <Broadcast size={40} color={Colors.text.disabled} weight="regular" />
             <Text style={styles.emptyText}>Нет эфиров</Text>
           </View>
         }

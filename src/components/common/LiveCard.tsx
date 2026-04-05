@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Broadcast, ArrowUpRight } from 'phosphor-react-native';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { LiveStream } from '../../types';
@@ -25,7 +25,7 @@ export default function LiveCard({ stream }: Props) {
         <Image source={{ uri: stream.thumbnail }} style={styles.thumbnail} />
       ) : (
         <View style={styles.thumbnailPlaceholder}>
-          <Ionicons name="radio-outline" size={32} color={Colors.text.disabled} />
+          <Broadcast size={32} color={Colors.text.disabled} weight="regular" />
         </View>
       )}
 
@@ -49,7 +49,7 @@ export default function LiveCard({ stream }: Props) {
 
         {stream.status !== 'ended' && (
           <TouchableOpacity style={styles.watchBtn} onPress={handleWatch}>
-            <Ionicons name="arrow-up-right" size={14} color={Colors.text.inverse} />
+            <ArrowUpRight size={14} color={Colors.text.inverse} weight="regular" />
             <Text style={styles.watchText}>Смотреть</Text>
           </TouchableOpacity>
         )}

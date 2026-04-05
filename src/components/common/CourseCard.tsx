@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { PlayCircle, List, Clock } from 'phosphor-react-native';
 import { Course } from '../../types';
 import Card from '../ui/Card';
 import { Colors, Spacing, Typography } from '../../constants/theme';
@@ -23,7 +23,7 @@ export default function CourseCard({ course, onPress }: Props) {
             {course.thumbnail ? (
               <Image source={{ uri: course.thumbnail }} style={styles.image} />
             ) : (
-              <Ionicons name="play-circle-outline" size={28} color={Colors.primary} />
+              <PlayCircle size={28} color={Colors.primary} weight="regular" />
             )}
           </View>
           <View style={styles.info}>
@@ -31,11 +31,11 @@ export default function CourseCard({ course, onPress }: Props) {
             <Text style={styles.description} numberOfLines={2}>{course.description}</Text>
             <View style={styles.stats}>
               <View style={styles.stat}>
-                <Ionicons name="list-outline" size={13} color={Colors.text.secondary} />
+                <List size={13} color={Colors.text.secondary} weight="regular" />
                 <Text style={styles.statText}>{course.lessonsCount} уроков</Text>
               </View>
               <View style={styles.stat}>
-                <Ionicons name="time-outline" size={13} color={Colors.text.secondary} />
+                <Clock size={13} color={Colors.text.secondary} weight="regular" />
                 <Text style={styles.statText}>{durationText}</Text>
               </View>
             </View>

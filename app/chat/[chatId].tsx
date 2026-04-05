@@ -5,7 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, ChatsCircle, ChatCircleDots, PaperPlaneRight } from 'phosphor-react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import { useChatStore } from '../../src/store/chatStore';
 import { useAuthStore } from '../../src/store/authStore';
@@ -77,7 +77,7 @@ export default function ChatScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
+          <ArrowLeft size={22} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
 
         {/* Avatar */}
@@ -86,7 +86,7 @@ export default function ChatScreen() {
             <Image source={{ uri: chat.classroomThumbnail }} style={styles.headerAvatarImg} />
           ) : (
             <View style={styles.headerAvatarFallback}>
-              <Ionicons name="chatbubbles-outline" size={18} color={Colors.primary} />
+              <ChatsCircle size={18} color={Colors.primary} weight="regular" />
             </View>
           )}
         </View>
@@ -124,7 +124,7 @@ export default function ChatScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <View style={styles.emptyIconWrap}>
-                <Ionicons name="chatbubble-ellipses-outline" size={32} color={Colors.primary} />
+                <ChatCircleDots size={32} color={Colors.primary} weight="regular" />
               </View>
               <Text style={styles.emptyText}>Напишите первое сообщение</Text>
             </View>
@@ -149,7 +149,7 @@ export default function ChatScreen() {
             disabled={!text.trim() || sending}
             activeOpacity={0.8}
           >
-            <Ionicons name="send" size={16} color="#fff" />
+            <PaperPlaneRight size={16} color="#fff" weight="fill" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

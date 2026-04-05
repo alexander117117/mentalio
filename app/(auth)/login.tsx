@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, AppleLogo, Envelope, Lock, Eye, EyeSlash, WarningCircle } from 'phosphor-react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/store/authStore';
 import { supabase } from '../../src/lib/supabase';
@@ -73,7 +73,7 @@ export default function LoginScreen() {
         >
           {/* Header */}
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
+            <ArrowLeft size={22} color={Colors.text.primary} weight="regular" />
           </TouchableOpacity>
 
           {/* Logo */}
@@ -99,7 +99,7 @@ export default function LoginScreen() {
               <ActivityIndicator color="#fff" size="small" />
             ) : (
               <>
-                <Ionicons name="logo-apple" size={20} color="#fff" />
+                <AppleLogo size={20} color="#fff" weight="regular" />
                 <Text style={styles.appleBtnText}>Войти через Apple</Text>
               </>
             )}
@@ -116,7 +116,7 @@ export default function LoginScreen() {
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>Email</Text>
             <View style={styles.inputWrap}>
-              <Ionicons name="mail-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
+              <Envelope size={16} color={Colors.text.disabled} weight="regular" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="your@email.com"
@@ -134,7 +134,7 @@ export default function LoginScreen() {
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>Пароль</Text>
             <View style={styles.inputWrap}>
-              <Ionicons name="lock-closed-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
+              <Lock size={16} color={Colors.text.disabled} weight="regular" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Введите пароль"
@@ -145,7 +145,10 @@ export default function LoginScreen() {
                 autoCapitalize="none"
               />
               <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeBtn}>
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={Colors.text.disabled} />
+                {showPassword
+                  ? <EyeSlash size={18} color={Colors.text.disabled} weight="regular" />
+                  : <Eye size={18} color={Colors.text.disabled} weight="regular" />
+                }
               </TouchableOpacity>
             </View>
           </View>
@@ -153,7 +156,7 @@ export default function LoginScreen() {
           {/* Error */}
           {error && (
             <View style={styles.errorBox}>
-              <Ionicons name="alert-circle-outline" size={15} color={Colors.error} />
+              <WarningCircle size={15} color={Colors.error} weight="regular" />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}

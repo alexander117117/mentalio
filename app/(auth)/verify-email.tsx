@@ -5,7 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Envelope, WarningCircle, Info } from 'phosphor-react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/store/authStore';
 import { notifySuccess, tapLight } from '../../src/utils/haptics';
@@ -89,12 +89,12 @@ export default function VerifyEmailScreen() {
         <View style={styles.inner}>
           {/* Back */}
           <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/register' as any)}>
-            <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
+            <ArrowLeft size={22} color={Colors.text.primary} weight="regular" />
           </TouchableOpacity>
 
           {/* Icon */}
           <View style={styles.iconWrap}>
-            <Ionicons name="mail" size={32} color={Colors.text.primary} />
+            <Envelope size={32} color={Colors.text.primary} weight="fill" />
           </View>
 
           {/* Title */}
@@ -130,7 +130,7 @@ export default function VerifyEmailScreen() {
           {/* Error */}
           {error && (
             <View style={styles.errorBox}>
-              <Ionicons name="alert-circle-outline" size={15} color={Colors.error} />
+              <WarningCircle size={15} color={Colors.error} weight="regular" />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
@@ -169,7 +169,7 @@ export default function VerifyEmailScreen() {
 
           {/* Supabase note */}
           <View style={styles.noteBox}>
-            <Ionicons name="information-circle-outline" size={14} color={Colors.text.disabled} />
+            <Info size={14} color={Colors.text.disabled} weight="regular" />
             <Text style={styles.noteText}>
               Если письмо не пришло, проверьте папку «Спам». Письмо содержит 6-значный код.
             </Text>

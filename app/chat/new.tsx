@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, MagnifyingGlass, XCircle, Info, ChatCircle, User } from 'phosphor-react-native';
 import { useState, useCallback } from 'react';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../src/constants/theme';
 import { supabase } from '../../src/lib/supabase';
@@ -36,7 +36,7 @@ function UserRow({ user, onPress, loading }: { user: UserResult; onPress: () => 
         {loading
           ? <ActivityIndicator size="small" color={Colors.primary} />
           : <>
-              <Ionicons name="chatbubble-outline" size={15} color={Colors.primary} />
+              <ChatCircle size={15} color={Colors.primary} weight="regular" />
               <Text style={styles.dmBtnText}>Написать</Text>
             </>
         }
@@ -91,7 +91,7 @@ export default function NewChatScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={Colors.text.primary} />
+          <ArrowLeft size={22} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <View>
           <Text style={styles.headerTitle}>Новое сообщение</Text>
@@ -102,7 +102,7 @@ export default function NewChatScreen() {
       {/* Search input */}
       <View style={styles.searchWrap}>
         <View style={styles.searchRow}>
-          <Ionicons name="search-outline" size={16} color={Colors.text.disabled} />
+          <MagnifyingGlass size={16} color={Colors.text.disabled} weight="regular" />
           <TextInput
             style={styles.searchInput}
             placeholder="Имя или ID пользователя..."
@@ -115,7 +115,7 @@ export default function NewChatScreen() {
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => { setQuery(''); setResults([]); setSearched(false); }}>
-              <Ionicons name="close-circle" size={16} color={Colors.text.disabled} />
+              <XCircle size={16} color={Colors.text.disabled} weight="fill" />
             </TouchableOpacity>
           )}
         </View>
@@ -124,7 +124,7 @@ export default function NewChatScreen() {
       {/* Hint — show user's own ID */}
       {!searched && (
         <View style={styles.hintCard}>
-          <Ionicons name="information-circle-outline" size={18} color={Colors.primary} />
+          <Info size={18} color={Colors.primary} weight="regular" />
           <Text style={styles.hintText}>
             Поделитесь своим ID с другим пользователем, чтобы он мог найти вас
           </Text>
@@ -151,7 +151,7 @@ export default function NewChatScreen() {
           ListEmptyComponent={
             searched ? (
               <View style={styles.empty}>
-                <Ionicons name="person-outline" size={40} color={Colors.text.disabled} />
+                <User size={40} color={Colors.text.disabled} weight="regular" />
                 <Text style={styles.emptyTitle}>Никого не найдено</Text>
                 <Text style={styles.emptyText}>Попробуйте другое имя или вставьте точный ID</Text>
               </View>

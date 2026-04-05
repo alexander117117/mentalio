@@ -5,7 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, GraduationCap, Book, Users, Check, Clock, PlayCircle, CheckCircle, CaretRight } from 'phosphor-react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import Avatar from '../../src/components/ui/Avatar';
 import Button from '../../src/components/ui/Button';
@@ -59,7 +59,7 @@ export default function ClassroomScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+          <ArrowLeft size={24} color={Colors.text.primary} weight="regular" />
         </TouchableOpacity>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
@@ -71,7 +71,7 @@ export default function ClassroomScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-        <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+        <ArrowLeft size={24} color={Colors.text.primary} weight="regular" />
       </TouchableOpacity>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -80,7 +80,7 @@ export default function ClassroomScreen() {
             <Image source={{ uri: classroom.thumbnail }} style={styles.thumbnailImg} />
           ) : (
             <View style={styles.thumbnailPlaceholder}>
-              <Ionicons name="school-outline" size={48} color={Colors.primary} />
+              <GraduationCap size={48} color={Colors.primary} weight="regular" />
             </View>
           )}
         </View>
@@ -101,11 +101,11 @@ export default function ClassroomScreen() {
 
           <View style={styles.statsRow}>
             <View style={styles.stat}>
-              <Ionicons name="book-outline" size={16} color={Colors.primary} />
+              <Book size={16} color={Colors.primary} weight="regular" />
               <Text style={styles.statText}>{classroom.coursesCount} курсов</Text>
             </View>
             <View style={styles.stat}>
-              <Ionicons name="people-outline" size={16} color={Colors.primary} />
+              <Users size={16} color={Colors.primary} weight="regular" />
               <Text style={styles.statText}>{classroom.studentsCount.toLocaleString()} студентов</Text>
             </View>
           </View>
@@ -131,7 +131,7 @@ export default function ClassroomScreen() {
                 >
                   <View style={[styles.lessonNum, lesson.isCompleted && styles.lessonNumDone]}>
                     {lesson.isCompleted
-                      ? <Ionicons name="checkmark" size={15} color="#fff" />
+                      ? <Check size={15} color="#fff" weight="bold" />
                       : <Text style={styles.lessonNumText}>{index + 1}</Text>
                     }
                   </View>
@@ -140,29 +140,28 @@ export default function ClassroomScreen() {
                     <View style={styles.lessonMeta}>
                       {lesson.duration > 0 && (
                         <View style={styles.metaItem}>
-                          <Ionicons name="time-outline" size={12} color={Colors.text.disabled} />
+                          <Clock size={12} color={Colors.text.disabled} weight="regular" />
                           <Text style={styles.metaText}>{Math.floor(lesson.duration / 60)} мин</Text>
                         </View>
                       )}
                       {lesson.videoUrl && (
                         <View style={styles.metaItem}>
-                          <Ionicons name="play-circle-outline" size={12} color={Colors.primary} />
+                          <PlayCircle size={12} color={Colors.primary} weight="regular" />
                           <Text style={[styles.metaText, { color: Colors.primary }]}>Видео</Text>
                         </View>
                       )}
                       {lesson.quiz && (
                         <View style={styles.metaItem}>
-                          <Ionicons name="checkmark-circle-outline" size={12} color={Colors.text.disabled} />
+                          <CheckCircle size={12} color={Colors.text.disabled} weight="regular" />
                           <Text style={styles.metaText}>Тест</Text>
                         </View>
                       )}
                     </View>
                   </View>
-                  <Ionicons
-                    name={lesson.isCompleted ? 'checkmark-circle' : 'chevron-forward'}
-                    size={18}
-                    color={lesson.isCompleted ? Colors.success : Colors.text.disabled}
-                  />
+                  {lesson.isCompleted
+                    ? <CheckCircle size={18} color={Colors.success} weight="fill" />
+                    : <CaretRight size={18} color={Colors.text.disabled} weight="regular" />
+                  }
                 </TouchableOpacity>
               ))}
             </View>

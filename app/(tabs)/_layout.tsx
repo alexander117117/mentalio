@@ -1,16 +1,14 @@
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { House, PlusCircle, ChatCircle, Bell, User } from 'phosphor-react-native';
 import { Colors } from '../../src/constants/theme';
 import { tapLight } from '../../src/utils/haptics';
 
-type IconName = React.ComponentProps<typeof Ionicons>['name'];
-
-const TABS: { name: string; title: string; icon: IconName; activeIcon: IconName }[] = [
-  { name: 'index',         title: 'Главная',       icon: 'home-outline',          activeIcon: 'home'          },
-  { name: 'studio',        title: 'Курсы',         icon: 'add-circle-outline',    activeIcon: 'add-circle'    },
-  { name: 'chats',         title: 'Чаты',          icon: 'chatbubble-outline',    activeIcon: 'chatbubble'    },
-  { name: 'notifications', title: 'Уведомления',   icon: 'notifications-outline', activeIcon: 'notifications' },
-  { name: 'profile',       title: 'Профиль',       icon: 'person-outline',        activeIcon: 'person'        },
+const TABS: { name: string; title: string; Icon: React.ComponentType<any> }[] = [
+  { name: 'index',         title: 'Главная',       Icon: House },
+  { name: 'studio',        title: 'Курсы',         Icon: PlusCircle },
+  { name: 'chats',         title: 'Чаты',          Icon: ChatCircle },
+  { name: 'notifications', title: 'Уведомления',   Icon: Bell },
+  { name: 'profile',       title: 'Профиль',       Icon: User },
 ];
 
 const HIDDEN = ['communities', 'classrooms', 'live', 'dashboard'];
@@ -43,11 +41,7 @@ export default function TabLayout() {
           options={{
             title: tab.title,
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons
-                name={focused ? tab.activeIcon : tab.icon}
-                size={22}
-                color={color}
-              />
+              <tab.Icon size={22} color={color} weight={focused ? 'fill' : 'regular'} />
             ),
           }}
           listeners={{ tabPress: () => tapLight() }}

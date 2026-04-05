@@ -1,8 +1,8 @@
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Image,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Gear, PencilSimple, GraduationCap, CaretRight, School, SignOut } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import Avatar from '../../src/components/ui/Avatar';
@@ -12,6 +12,7 @@ import { useClassroomStore } from '../../src/store/classroomStore';
 export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const setInstructor = useAuthStore((s) => s.setInstructor);
   const classrooms = useClassroomStore((s) => s.classrooms);
   const enrolledClassrooms = classrooms.filter((c) => c.isEnrolled);
 
@@ -23,7 +24,7 @@ export default function ProfileScreen() {
           style={styles.settingsBtn}
           onPress={() => router.push('/profile/settings' as any)}
         >
-          <Ionicons name="settings-outline" size={22} color={Colors.text.secondary} />
+          <Gear size={22} color={Colors.text.secondary} weight="regular" />
         </TouchableOpacity>
       </View>
 
@@ -36,7 +37,7 @@ export default function ProfileScreen() {
               style={styles.editBtn}
               onPress={() => router.push('/profile/edit' as any)}
             >
-              <Ionicons name="create-outline" size={16} color={Colors.text.primary} />
+              <PencilSimple size={16} color={Colors.text.primary} weight="regular" />
               <Text style={styles.editBtnText}>Редактировать</Text>
             </TouchableOpacity>
           </View>
@@ -67,23 +68,46 @@ export default function ProfileScreen() {
                   <View style={styles.courseThumbnail}>
                     {c.thumbnail
                       ? <Image source={{ uri: c.thumbnail }} style={styles.courseThumbnailImg} />
-                      : <Ionicons name="school-outline" size={20} color={Colors.text.disabled} />
+                      : <GraduationCap size={20} color={Colors.text.disabled} weight="regular" />
                     }
                   </View>
                   <View style={styles.courseInfo}>
                     <Text style={styles.courseName} numberOfLines={1}>{c.name}</Text>
                     <Text style={styles.courseInstructor}>{c.instructor.name}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.text.disabled} />
+                  <CaretRight size={16} color={Colors.text.disabled} weight="regular" />
                 </TouchableOpacity>
               ))}
             </View>
           )}
         </View>
 
+        {/* Instructor toggle */}
+        <View style={styles.instructorRow}>
+          <View style={styles.instructorLeft}>
+            <View style={styles.instructorIconWrap}>
+              <GraduationCap size={18} color={Colors.primary} weight="regular" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.instructorLabel}>Я преподаватель</Text>
+              <Text style={styles.instructorDesc}>
+                {user?.isInstructor
+                  ? 'Дашборд выручки виден во вкладке Курсы'
+                  : 'Включите, чтобы видеть аналитику курсов'}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={user?.isInstructor ?? false}
+            onValueChange={(v) => setInstructor(v)}
+            trackColor={{ true: Colors.primary, false: Colors.border }}
+            thumbColor={Colors.surface}
+          />
+        </View>
+
         {/* Logout */}
         <TouchableOpacity style={styles.logoutBtn} onPress={signOut}>
-          <Ionicons name="log-out-outline" size={18} color={Colors.error} />
+          <SignOut size={18} color={Colors.error} weight="regular" />
           <Text style={styles.logoutText}>Выйти из аккаунта</Text>
         </TouchableOpacity>
 
@@ -182,6 +206,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: { ...Typography.body, color: Colors.text.secondary },
+
+  instructorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.lg,
+    padding: 14,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  instructorLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  instructorIconWrap: {
+    width: 36, height: 36,
+    borderRadius: BorderRadius.md,
+    backgroundColor: `${Colors.primary}12`,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  instructorLabel: { fontSize: 14, fontWeight: '600', color: Colors.text.primary },
+  instructorDesc: { fontSize: 12, color: Colors.text.secondary, marginTop: 2 },
 
   logoutBtn: {
     flexDirection: 'row',

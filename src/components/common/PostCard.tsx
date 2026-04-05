@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Heart, ChatCircle } from 'phosphor-react-native';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Post } from '../../types';
@@ -54,10 +54,10 @@ export default function PostCard({ post, onLike, onPress }: Props) {
           onPress={(e) => { e.stopPropagation?.(); onLike?.(post.id); }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons
-            name={post.isLiked ? 'heart' : 'heart-outline'}
+          <Heart
             size={16}
             color={post.isLiked ? Colors.error : Colors.text.disabled}
+            weight={post.isLiked ? 'fill' : 'regular'}
           />
           <Text style={[styles.actionText, post.isLiked && { color: Colors.error }]}>
             {post.likesCount}
@@ -65,7 +65,7 @@ export default function PostCard({ post, onLike, onPress }: Props) {
         </TouchableOpacity>
 
         <View style={styles.action}>
-          <Ionicons name="chatbubble-outline" size={15} color={Colors.text.disabled} />
+          <ChatCircle size={15} color={Colors.text.disabled} weight="regular" />
           <Text style={styles.actionText}>{post.commentsCount}</Text>
         </View>
       </View>
