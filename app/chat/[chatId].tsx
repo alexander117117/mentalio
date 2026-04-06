@@ -16,20 +16,29 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
 
-function MessageBubble({ msg, isMe }: { msg: ChatMessage; isMe: boolean }) {
+function MessageBubble({ msg, isMe, isRead }: { msg: ChatMessage; isMe: boolean; isRead: boolean }) {
   return (
     <View style={[styles.msgRow, isMe && styles.msgRowMe]}>
       {!isMe && (
         <Avatar uri={msg.userAvatar} name={msg.userName} size={30} />
       )}
-      <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
-        {!isMe && (
-          <Text style={styles.bubbleSender}>{msg.userName}</Text>
+      <View>
+        <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
+          {!isMe && (
+            <Text style={styles.bubbleSender}>{msg.userName}</Text>
+          )}
+          <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{msg.content}</Text>
+          <View style={styles.bubbleFooter}>
+            <Text style={[styles.bubbleTime, isMe && styles.bubbleTimeMe]}>
+              {formatTime(msg.createdAt)}
+            </Text>
+          </View>
+        </View>
+        {isMe && (
+          <Text style={[styles.readStatus, { color: isRead ? Colors.primary : Colors.text.disabled }]}>
+            {isRead ? '✓✓' : '✓'}
+          </Text>
         )}
-        <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>{msg.content}</Text>
-        <Text style={[styles.bubbleTime, isMe && styles.bubbleTimeMe]}>
-          {formatTime(msg.createdAt)}
-        </Text>
       </View>
     </View>
   );
@@ -41,6 +50,7 @@ export default function ChatScreen() {
   const messages = useChatStore((s) => s.messages);
   const fetchMessages = useChatStore((s) => s.fetchMessages);
   const sendMessage = useChatStore((s) => s.sendMessage);
+  const markChatRead = useChatStore((s) => s.markChatRead);
   const user = useAuthStore((s) => s.user);
 
   const [text, setText] = useState('');
@@ -50,7 +60,10 @@ export default function ChatScreen() {
   const chat = chats.find((c) => c.id === chatId);
 
   useEffect(() => {
-    if (chatId) fetchMessages(chatId);
+    if (chatId) {
+      fetchMessages(chatId);
+      markChatRead(chatId);
+    }
   }, [chatId]);
 
   useEffect(() => {
@@ -116,9 +129,11 @@ export default function ChatScreen() {
           ref={listRef}
           data={messages}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <MessageBubble msg={item} isMe={item.userId === user?.id} />
-          )}
+          renderItem={({ item, index }) => {
+            const isMe = item.userId === user?.id;
+            const isRead = isMe && messages.slice(index + 1).some((m) => m.userId !== user?.id);
+            return <MessageBubble msg={item} isMe={isMe} isRead={isRead} />;
+          }}
           contentContainerStyle={styles.messagesList}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
@@ -191,7 +206,7 @@ const styles = StyleSheet.create({
   headerSub: { fontSize: 12, color: Colors.text.secondary, marginTop: 1 },
   headerBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
   headerActiveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.primary },
-  headerBadgeText: { fontSize: 11, fontWeight: '600', color: Colors.primary, letterSpacing: 0.3 },
+  headerBadgeText: { fontSize: 11, color: Colors.primary, lineHeight: 16 },
 
   // Messages
   messagesList: { padding: Spacing.md, gap: 8, flexGrow: 1 },
@@ -219,8 +234,10 @@ const styles = StyleSheet.create({
   bubbleSender: { fontSize: 12, fontWeight: '700', color: Colors.primary, marginBottom: 1 },
   bubbleText: { fontSize: 15, color: Colors.text.primary, lineHeight: 20 },
   bubbleTextMe: { color: '#fff' },
-  bubbleTime: { fontSize: 11, color: Colors.text.disabled, alignSelf: 'flex-end' },
+  bubbleFooter: { flexDirection: 'row', alignSelf: 'flex-end' },
+  bubbleTime: { fontSize: 11, color: Colors.text.disabled },
   bubbleTimeMe: { color: 'rgba(255,255,255,0.6)' },
+  readStatus: { fontSize: 12, alignSelf: 'flex-end', marginTop: 2, marginRight: 2 },
 
   // Empty
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 80 },

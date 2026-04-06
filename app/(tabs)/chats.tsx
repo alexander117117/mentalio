@@ -3,7 +3,7 @@ import {
   TextInput, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChatsCircle, PencilSimple, MagnifyingGlass, XCircle, ChatCircleDots } from 'phosphor-react-native';
+import { ChatsCircle, PencilSimple, MagnifyingGlass, XCircle } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { Colors, Spacing, Typography, BorderRadius, Shadows } from '../../src/constants/theme';
@@ -24,7 +24,8 @@ function formatTime(iso: string) {
 }
 
 function ChatCard({ chat }: { chat: Chat }) {
-  const hasUnread = false; // TODO: unread tracking
+  const avatarUri = chat.isDM ? chat.dmUserAvatar : chat.classroomThumbnail;
+  const unread = chat.unreadCount ?? 0;
 
   return (
     <TouchableOpacity
@@ -34,8 +35,8 @@ function ChatCard({ chat }: { chat: Chat }) {
     >
       {/* Avatar */}
       <View style={styles.avatarWrap}>
-        {chat.classroomThumbnail ? (
-          <Image source={{ uri: chat.classroomThumbnail }} style={styles.avatarImg} />
+        {avatarUri ? (
+          <Image source={{ uri: avatarUri }} style={styles.avatarImg} />
         ) : (
           <View style={styles.avatarFallback}>
             <ChatsCircle size={22} color={Colors.primary} weight="regular" />
@@ -45,12 +46,12 @@ function ChatCard({ chat }: { chat: Chat }) {
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Badge row */}
+        {/* Badge + time row */}
         <View style={styles.badgeRow}>
-          <View style={[styles.badge, chat.isDM && styles.badgeDM]}>
-            <View style={[styles.badgeDot, chat.isDM && styles.badgeDotDM]} />
-            <Text style={[styles.badgeText, chat.isDM && styles.badgeTextDM]}>
-              {chat.isDM ? 'ЛИЧНОЕ' : chat.classroomId ? 'ЧАТ КУРСА' : 'ЧАТ'}
+          <View style={styles.badge}>
+            <View style={styles.badgeDot} />
+            <Text style={styles.badgeText}>
+              {chat.isDM ? 'Личный чат' : chat.classroomId ? 'Чат курса' : 'Чат'}
             </Text>
           </View>
           {chat.lastMessage && (
@@ -61,14 +62,18 @@ function ChatCard({ chat }: { chat: Chat }) {
         {/* Name */}
         <Text style={styles.name} numberOfLines={1}>{chat.name}</Text>
 
-        {/* Last message */}
+        {/* Last message + unread badge */}
         <View style={styles.lastRow}>
-          <Text style={styles.lastMsg} numberOfLines={1}>
+          <Text style={[styles.lastMsg, unread > 0 && styles.lastMsgUnread]} numberOfLines={1}>
             {chat.lastMessage
               ? `${chat.lastMessage.userName}: ${chat.lastMessage.content}`
               : 'Нет сообщений'}
           </Text>
-          {hasUnread && <View style={styles.unreadDot} />}
+          {unread > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadCount}>{unread > 99 ? '99+' : unread}</Text>
+            </View>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -134,9 +139,11 @@ export default function ChatsScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <View style={styles.emptyIconWrap}>
-              <ChatCircleDots size={36} color={Colors.primary} weight="regular" />
-            </View>
+            <Image
+              source={require('../../assets/images/messages_icon.png')}
+              style={styles.emptyIllustration}
+              resizeMode="contain"
+            />
             <Text style={styles.emptyTitle}>Нет чатов</Text>
             <Text style={styles.emptySubtitle}>
               Чаты появляются при создании курса
@@ -163,8 +170,7 @@ const styles = StyleSheet.create({
   headerSub: {
     fontSize: 11,
     color: Colors.text.disabled,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    lineHeight: 16,
   },
   headerTitle: {
     fontSize: 26,
@@ -249,20 +255,16 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   badgeDot: {
-    width: 6,
-    height: 6,
+    width: 5,
+    height: 5,
     borderRadius: 3,
     backgroundColor: Colors.primary,
   },
   badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 11,
     color: Colors.primary,
-    letterSpacing: 0.5,
+    lineHeight: 16,
   },
-  badgeDM: { backgroundColor: 'transparent' },
-  badgeDotDM: { backgroundColor: '#8B5CF6' },
-  badgeTextDM: { color: '#8B5CF6' },
   time: {
     fontSize: 12,
     color: Colors.text.disabled,
@@ -285,12 +287,24 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     lineHeight: 18,
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  lastMsgUnread: {
+    fontWeight: '600',
+    color: Colors.text.primary,
+  },
+  unreadBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
     flexShrink: 0,
+  },
+  unreadCount: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
   },
 
   // Empty
@@ -310,6 +324,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 4,
   },
+  emptyIllustration: { width: 220, height: 220, marginBottom: 4 },
   emptyTitle: { ...Typography.h3, color: Colors.text.primary },
   emptySubtitle: {
     ...Typography.body,

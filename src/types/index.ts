@@ -132,6 +132,7 @@ export interface Chat {
   classroomThumbnail?: string;
   createdBy: string;
   createdAt: string;
+  unreadCount?: number;
   lastMessage?: {
     content: string;
     createdAt: string;

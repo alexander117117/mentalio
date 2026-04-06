@@ -4,13 +4,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, GraduationCap, Book, Users, Check, Clock, PlayCircle, CheckCircle, CaretRight } from 'phosphor-react-native';
 import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
 import Avatar from '../../src/components/ui/Avatar';
 import Button from '../../src/components/ui/Button';
 import { useClassroomStore } from '../../src/store/classroomStore';
 import { useAuthStore } from '../../src/store/authStore';
+import { useChatStore } from '../../src/store/chatStore';
 
 export default function ClassroomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,6 +22,11 @@ export default function ClassroomScreen() {
   const fetchLessons = useClassroomStore((s) => s.fetchLessons);
   const enrollClassroom = useClassroomStore((s) => s.enrollClassroom);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const chats = useChatStore((s) => s.chats);
+  const joinClassroomChat = useChatStore((s) => s.joinClassroomChat);
+  const fetchChats = useChatStore((s) => s.fetchChats);
+
+  const [joiningChat, setJoiningChat] = useState(false);
 
   const classroom = classrooms.find((c) => c.id === id);
   const classroomCourses = courses.filter((c) => c.classroomId === id);
@@ -35,6 +41,27 @@ export default function ClassroomScreen() {
       updated.forEach((c) => fetchLessons(c.id));
     });
   }, [id]);
+
+  const classroomChat = chats.find((c) => c.classroomId === id);
+  const isInChat = !!classroomChat;
+
+  const handleJoinChat = async () => {
+    if (!isAuthenticated) return;
+    setJoiningChat(true);
+    try {
+      const chatId = await joinClassroomChat(id!);
+      await fetchChats();
+      if (chatId) {
+        router.push(`/chat/${chatId}` as any);
+      } else {
+        Alert.alert('Чат не найден', 'У этого курса пока нет чата');
+      }
+    } catch (e: any) {
+      Alert.alert('Ошибка', e?.message ?? 'Не удалось вступить в чат');
+    } finally {
+      setJoiningChat(false);
+    }
+  };
 
   const handleEnroll = async () => {
     if (!isAuthenticated) {
@@ -116,6 +143,17 @@ export default function ClassroomScreen() {
             onPress={handleEnroll}
             disabled={classroom.isEnrolled}
           />
+
+          <TouchableOpacity
+            style={[styles.chatBtn, isInChat && styles.chatBtnJoined]}
+            activeOpacity={0.8}
+            onPress={isInChat ? () => router.push(`/chat/${classroomChat!.id}` as any) : handleJoinChat}
+            disabled={joiningChat}
+          >
+            <Text style={[styles.chatBtnText, isInChat && styles.chatBtnTextJoined]}>
+              {joiningChat ? 'Вступаем...' : isInChat ? 'Открыть чат курса' : 'Вступить в чат курса'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.lessonsSection}>
@@ -236,4 +274,26 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 12, color: Colors.text.disabled },
   empty: { alignItems: 'center', paddingVertical: Spacing.xl },
   emptyText: { ...Typography.body, color: Colors.text.secondary },
+
+  chatBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 13,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    backgroundColor: 'transparent',
+  },
+  chatBtnJoined: {
+    backgroundColor: `${Colors.primary}12`,
+    borderColor: Colors.primary,
+  },
+  chatBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
+  chatBtnTextJoined: {
+    color: Colors.primary,
+  },
 });

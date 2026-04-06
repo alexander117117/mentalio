@@ -1,6 +1,5 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell } from 'phosphor-react-native';
 import { Colors, Spacing, Typography } from '../../src/constants/theme';
 
 export default function NotificationsScreen() {
@@ -10,7 +9,11 @@ export default function NotificationsScreen() {
         <Text style={styles.title}>Уведомления</Text>
       </View>
       <View style={styles.empty}>
-        <Bell size={44} color={Colors.text.disabled} weight="regular" />
+        <Image
+          source={require('../../assets/images/notifications_image.png')}
+          style={styles.emptyIllustration}
+          resizeMode="contain"
+        />
         <Text style={styles.emptyTitle}>Нет уведомлений</Text>
         <Text style={styles.emptySubtitle}>Здесь будут появляться уведомления об активности</Text>
       </View>
@@ -29,6 +32,7 @@ const styles = StyleSheet.create({
   },
   title: { ...Typography.h2, color: Colors.text.primary },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingHorizontal: Spacing.xl },
+  emptyIllustration: { width: 220, height: 220, marginBottom: 4 },
   emptyTitle: { ...Typography.h3, color: Colors.text.primary },
   emptySubtitle: { ...Typography.body, color: Colors.text.secondary, textAlign: 'center' },
 });

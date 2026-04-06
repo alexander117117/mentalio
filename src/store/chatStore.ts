@@ -6,19 +6,31 @@ interface ChatStore {
   chats: Chat[];
   messages: ChatMessage[];
   isLoading: boolean;
+  readTimestamps: Record<string, string>;
 
   fetchChats: () => Promise<void>;
   createChat: (name: string, description?: string, classroomId?: string) => Promise<string>;
   startDM: (targetUserId: string, targetName: string) => Promise<string>;
+  joinClassroomChat: (classroomId: string) => Promise<string | null>;
   fetchMessages: (chatId: string) => Promise<void>;
   sendMessage: (chatId: string, content: string) => Promise<void>;
   addMember: (chatId: string, userId: string) => Promise<void>;
+  markChatRead: (chatId: string) => void;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
   chats: [],
   messages: [],
   isLoading: false,
+  readTimestamps: {},
+
+  markChatRead: (chatId) => {
+    const now = new Date().toISOString();
+    set((s) => ({ readTimestamps: { ...s.readTimestamps, [chatId]: now } }));
+    set((s) => ({
+      chats: s.chats.map((c) => c.id === chatId ? { ...c, unreadCount: 0 } : c),
+    }));
+  },
 
   fetchChats: async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -66,14 +78,42 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             .single();
           lastUserName = prof?.name ?? '';
         }
+        // Fetch DM partner avatar
+        let dmUserAvatar: string | undefined;
+        if (chat.is_dm) {
+          const { data: otherMember } = await supabase
+            .from('chat_members')
+            .select('user_id, profiles(avatar_url)')
+            .eq('chat_id', chat.id)
+            .neq('user_id', user.id)
+            .limit(1)
+            .single();
+          dmUserAvatar = (otherMember as any)?.profiles?.avatar_url ?? undefined;
+        }
+
+        // Compute unread count (only if user has marked this chat as read before)
+        const readAt = get().readTimestamps[chat.id];
+        let unreadCount = 0;
+        if (readAt && last && last.created_at > readAt) {
+          const { count } = await supabase
+            .from('chat_messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('chat_id', chat.id)
+            .neq('user_id', user.id)
+            .gt('created_at', readAt);
+          unreadCount = count ?? 0;
+        }
+
         return {
           id: chat.id,
           name: chat.name,
           isDM: chat.is_dm ?? false,
+          dmUserAvatar,
           classroomId: chat.classroom_id ?? undefined,
           classroomThumbnail: chat.classrooms?.thumbnail_url ?? undefined,
           createdBy: chat.created_by,
           createdAt: chat.created_at,
+          unreadCount,
           lastMessage: last
             ? { content: last.content, createdAt: last.created_at, userName: lastUserName }
             : undefined,
@@ -181,6 +221,38 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     });
   },
 
+  joinClassroomChat: async (classroomId) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('unauthenticated');
+
+    // Find the chat linked to this classroom
+    const { data: chat } = await supabase
+      .from('chats')
+      .select('id, name, created_by, created_at, classrooms(thumbnail_url)')
+      .eq('classroom_id', classroomId)
+      .single();
+    if (!chat) return null;
+
+    // Add user as member (upsert — safe if already a member)
+    await supabase.from('chat_members').upsert({ chat_id: chat.id, user_id: user.id });
+
+    // Update local state if not already in list
+    const existing = get().chats.find((c) => c.id === chat.id);
+    if (!existing) {
+      const newChat: Chat = {
+        id: chat.id,
+        name: chat.name,
+        classroomId,
+        classroomThumbnail: (chat as any).classrooms?.thumbnail_url ?? undefined,
+        createdBy: chat.created_by,
+        createdAt: chat.created_at,
+      };
+      set({ chats: [newChat, ...get().chats] });
+    }
+
+    return chat.id;
+  },
+
   addMember: async (chatId, userId) => {
     await supabase.from('chat_members').upsert({ chat_id: chatId, user_id: userId });
   },
@@ -222,7 +294,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     // Create new DM chat
     const { data: chat, error } = await supabase
       .from('chats')
-      .insert({ name: targetName, created_by: user.id })
+      .insert({ name: targetName, created_by: user.id, is_dm: true })
       .select('id, name, created_by, created_at')
       .single();
     if (error) throw new Error(error.message);

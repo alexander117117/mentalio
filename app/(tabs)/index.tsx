@@ -426,7 +426,7 @@ const drawerStyles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: 14,
   },
-  sectionTitle: { fontSize: 11, fontWeight: '700', color: Colors.text.secondary, textTransform: 'uppercase', letterSpacing: 0.6, flex: 1 },
+  sectionTitle: { fontSize: 11, color: Colors.text.disabled, lineHeight: 16, flex: 1 },
   badge: {
     backgroundColor: Colors.surfaceSecondary,
     paddingHorizontal: 7, paddingVertical: 2,
