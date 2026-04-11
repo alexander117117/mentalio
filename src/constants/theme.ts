@@ -19,9 +19,10 @@ export const Colors = {
   border: '#E8E8E8',
   borderStrong: '#D1D1D1',
 
-  // Accent (black-based, Notion style)
-  primary: '#0F0F0F',          // Black as primary action
-  primaryHover: '#2D2D2D',
+  // Accent — deep forest green (brand color)
+  primary: '#166534',
+  primaryHover: '#14532D',
+  primaryLight: '#DCFCE7',
 
   // Semantic
   error: '#EF4444',

@@ -22,7 +22,7 @@ function MessageBubble({ msg, isMe, isRead }: { msg: ChatMessage; isMe: boolean;
       {!isMe && (
         <Avatar uri={msg.userAvatar} name={msg.userName} size={30} />
       )}
-      <View>
+      <View style={[styles.bubbleWrap, isMe && styles.bubbleWrapMe]}>
         <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
           {!isMe && (
             <Text style={styles.bubbleSender}>{msg.userName}</Text>
@@ -214,8 +214,16 @@ const styles = StyleSheet.create({
   msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 8 },
   msgRowMe: { flexDirection: 'row-reverse' },
 
+  bubbleWrap: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  bubbleWrapMe: {
+    alignItems: 'flex-end',
+  },
+
   bubble: {
-    maxWidth: '75%',
+    maxWidth: '85%',
     borderRadius: BorderRadius.xl,
     paddingHorizontal: 14,
     paddingVertical: 9,

@@ -78,17 +78,24 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             .single();
           lastUserName = prof?.name ?? '';
         }
-        // Fetch DM partner avatar
+        // Fetch DM partner avatar (for all chats without a classroom)
         let dmUserAvatar: string | undefined;
-        if (chat.is_dm) {
+        if (!chat.classroom_id) {
           const { data: otherMember } = await supabase
             .from('chat_members')
-            .select('user_id, profiles(avatar_url)')
+            .select('user_id')
             .eq('chat_id', chat.id)
             .neq('user_id', user.id)
             .limit(1)
             .single();
-          dmUserAvatar = (otherMember as any)?.profiles?.avatar_url ?? undefined;
+          if (otherMember?.user_id) {
+            const { data: dmProfile } = await supabase
+              .from('profiles')
+              .select('avatar_url')
+              .eq('id', otherMember.user_id)
+              .single();
+            dmUserAvatar = dmProfile?.avatar_url ?? undefined;
+          }
         }
 
         // Compute unread count (only if user has marked this chat as read before)

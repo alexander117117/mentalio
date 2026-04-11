@@ -24,7 +24,7 @@ function formatTime(iso: string) {
 }
 
 function ChatCard({ chat }: { chat: Chat }) {
-  const avatarUri = chat.isDM ? chat.dmUserAvatar : chat.classroomThumbnail;
+  const avatarUri = chat.classroomThumbnail ?? chat.dmUserAvatar;
   const unread = chat.unreadCount ?? 0;
 
   return (

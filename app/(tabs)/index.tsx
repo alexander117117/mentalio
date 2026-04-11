@@ -3,7 +3,7 @@ import {
   Image, ScrollView, Animated, Dimensions, FlatList, Easing,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CalendarBlank, GraduationCap, Users, Book, CaretRight, Compass, List, X as CloseIcon, MagnifyingGlass, XCircle, YoutubeLogo, VideoCamera, Broadcast } from 'phosphor-react-native';
+import { CalendarBlank, GraduationCap, Users, Book, CaretRight, Compass, List, X as CloseIcon, MagnifyingGlass, XCircle, YoutubeLogo, VideoCamera, Broadcast, ChartBar } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useRef, useState, useEffect } from 'react';
 
@@ -386,6 +386,17 @@ function DrawerContent({
             <Compass size={18} color={Colors.primary} weight="regular" />
           </View>
           <Text style={drawerStyles.footerText}>Обзор курсов</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={drawerStyles.footerBtn}
+          activeOpacity={0.7}
+          onPress={() => { closeDrawer(); router.push('/(tabs)/dashboard' as any); }}
+        >
+          <View style={drawerStyles.footerIcon}>
+            <ChartBar size={18} color={Colors.primary} weight="regular" />
+          </View>
+          <Text style={drawerStyles.footerText}>Аналитика</Text>
         </TouchableOpacity>
 
         <View style={{ height: insets.bottom + 16 }} />

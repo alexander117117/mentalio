@@ -1,291 +1,300 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { GraduationCap, Users, Book, PlayCircle, PencilSimple, Eye, TrendUp, PlusCircle } from 'phosphor-react-native';
+import {
+  ArrowLeft, Users, GraduationCap, Book, PlayCircle,
+  TrendUp, TrendDown, PencilSimple, Eye, PlusCircle,
+} from 'phosphor-react-native';
 import { router } from 'expo-router';
-import { Colors, Spacing, Typography, BorderRadius } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 import { useClassroomStore } from '../../src/store/classroomStore';
-import { MOCK_USERS } from '../../src/utils/mockData';
+import { useAuthStore } from '../../src/store/authStore';
 import { Classroom } from '../../src/types';
 
-const currentUser = MOCK_USERS[0];
+const CARD_PAD = Spacing.md;
+const GREEN = Colors.primary;
+const GREEN_MID = '#16A34A';
 
-const REVENUE_DATA = [
-  { month: 'Окт', value: 42000 },
-  { month: 'Ноя', value: 67000 },
-  { month: 'Дек', value: 53000 },
-  { month: 'Янв', value: 89000 },
-  { month: 'Фев', value: 74000 },
-  { month: 'Мар', value: 112000 },
-];
-const MAX_VALUE = Math.max(...REVENUE_DATA.map((d) => d.value));
+function fmt(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+  return String(n);
+}
 
-// ─── Classroom card ───────────────────────────────────────────────────────────
+// ─── Metric card ─────────────────────────────────────────────────────────────
 
-function ClassroomManageCard({ classroom }: { classroom: Classroom }) {
-  const courses = useClassroomStore((s) => s.courses);
-  const lessons = useClassroomStore((s) => s.lessons);
-  const myCourses = courses.filter((c) => c.classroomId === classroom.id);
-  const myLessons = lessons.filter((l) => myCourses.some((c) => c.id === l.courseId));
-
+function MetricCard({
+  label, sub, value, unit, trend, trendUp,
+}: {
+  label: string; sub: string; value: string; unit?: string;
+  trend: string; trendUp: boolean;
+}) {
   return (
-    <View style={cardStyles.card}>
-      <View style={cardStyles.thumbnail}>
-        {classroom.thumbnail ? (
-          <Image source={{ uri: classroom.thumbnail }} style={cardStyles.thumbnailImg} />
-        ) : (
-          <View style={cardStyles.thumbnailPlaceholder}>
-            <GraduationCap size={24} color={Colors.text.disabled} weight="regular" />
-          </View>
-        )}
-        <View style={cardStyles.statusBadge}>
-          <Text style={cardStyles.statusText}>{classroom.isPublic ? 'Публичный' : 'Приватный'}</Text>
-        </View>
+    <View style={mc.card}>
+      <Text style={mc.label}>{label}</Text>
+      <Text style={mc.sub}>{sub}</Text>
+      <View style={mc.trendRow}>
+        {trendUp
+          ? <TrendUp size={13} color={GREEN} weight="bold" />
+          : <TrendDown size={13} color={Colors.error} weight="bold" />}
+        <Text style={[mc.trend, { color: trendUp ? GREEN : Colors.error }]}>{trend}</Text>
       </View>
-      <View style={cardStyles.info}>
-        <Text style={cardStyles.name} numberOfLines={1}>{classroom.name}</Text>
-        <View style={cardStyles.statsRow}>
-          <View style={cardStyles.stat}>
-            <Users size={12} color={Colors.text.secondary} weight="regular" />
-            <Text style={cardStyles.statText}>{classroom.studentsCount} студентов</Text>
-          </View>
-          <View style={cardStyles.stat}>
-            <Book size={12} color={Colors.text.secondary} weight="regular" />
-            <Text style={cardStyles.statText}>{myCourses.length} курсов</Text>
-          </View>
-          <View style={cardStyles.stat}>
-            <PlayCircle size={12} color={Colors.text.secondary} weight="regular" />
-            <Text style={cardStyles.statText}>{myLessons.length} уроков</Text>
-          </View>
-        </View>
-        <View style={cardStyles.actions}>
-          <TouchableOpacity
-            style={cardStyles.btnPrimary}
-            onPress={() => router.push(`/classroom/${classroom.id}/manage` as any)}
-          >
-            <PencilSimple size={14} color={Colors.text.inverse} weight="regular" />
-            <Text style={cardStyles.btnPrimaryText}>Редактировать</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={cardStyles.btnSecondary}
-            onPress={() => router.push(`/classroom/${classroom.id}` as any)}
-          >
-            <Eye size={14} color={Colors.text.primary} weight="regular" />
-            <Text style={cardStyles.btnSecondaryText}>Просмотр</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={mc.valueRow}>
+        <Text style={mc.value}>{value}</Text>
+        {unit && <Text style={mc.unit}>{unit}</Text>}
       </View>
     </View>
   );
 }
 
-const cardStyles = StyleSheet.create({
+const mc = StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
+    flex: 1,
+    backgroundColor: '#fff',
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
-    flexDirection: 'row',
+    borderColor: '#E2E8F0',
+    padding: 16,
+    gap: 3,
   },
-  thumbnail: {
-    width: 90,
-    backgroundColor: Colors.surfaceSecondary,
-    position: 'relative',
-  },
-  thumbnailImg: { width: '100%', height: '100%' },
-  thumbnailPlaceholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statusBadge: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
-  },
-  statusText: { fontSize: 10, color: '#fff', fontWeight: '500' },
-  info: { flex: 1, padding: Spacing.sm, gap: 6 },
-  name: { ...Typography.body, fontWeight: '600', color: Colors.text.primary },
-  statsRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
-  stat: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  statText: { fontSize: 11, color: Colors.text.secondary },
-  actions: { flexDirection: 'row', gap: Spacing.xs },
-  btnPrimary: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.sm,
-    paddingVertical: 7,
-  },
-  btnPrimaryText: { fontSize: 12, fontWeight: '600', color: Colors.text.inverse },
-  btnSecondary: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.sm,
-    paddingVertical: 7,
-  },
-  btnSecondaryText: { fontSize: 12, fontWeight: '500', color: Colors.text.primary },
+  label: { fontSize: 13, fontWeight: '600', color: Colors.text.primary },
+  sub: { fontSize: 11, color: Colors.text.disabled, marginTop: 1 },
+  trendRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 8 },
+  trend: { fontSize: 12, fontWeight: '700' },
+  valueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 4 },
+  value: { fontSize: 28, fontWeight: '800', color: Colors.text.primary, letterSpacing: -0.5 },
+  unit: { fontSize: 14, fontWeight: '500', color: Colors.text.secondary },
 });
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
+// ─── Goal card ────────────────────────────────────────────────────────────────
+
+function GoalCard({ totalStudents, goal }: { totalStudents: number; goal: number }) {
+  const pct = Math.min(Math.round((totalStudents / goal) * 100), 100);
+
+  return (
+    <View style={gc.card}>
+      <Text style={gc.title}>Цель: {goal.toLocaleString()} студентов</Text>
+      <Text style={gc.sub}>Всего записавшихся</Text>
+      <Text style={gc.progress}>{pct}% от цели</Text>
+      <View style={gc.milestoneRow}>
+        {[0, 25, 50, 75, 100].map((m) => (
+          <Text key={m} style={gc.milestone}>{m}%</Text>
+        ))}
+      </View>
+      <View style={gc.track}>
+        <View style={[gc.fill, { width: `${pct}%` }]} />
+        <View style={[gc.marker, { left: '75%' }]} />
+      </View>
+    </View>
+  );
+}
+
+const gc = StyleSheet.create({
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 16,
+    gap: 4,
+  },
+  title: { fontSize: 13, fontWeight: '600', color: Colors.text.primary },
+  sub: { fontSize: 11, color: Colors.text.disabled },
+  progress: { fontSize: 15, fontWeight: '700', color: GREEN, marginTop: 10 },
+  milestoneRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+  milestone: { fontSize: 10, color: Colors.text.disabled },
+  track: {
+    height: 14, backgroundColor: '#E2E8F0', borderRadius: 7,
+    overflow: 'hidden', marginTop: 2, position: 'relative',
+  },
+  fill: { height: '100%', backgroundColor: GREEN, borderRadius: 7 },
+  marker: { position: 'absolute', top: 0, bottom: 0, width: 2, backgroundColor: '#64748B' },
+});
+
+// ─── Classroom row ────────────────────────────────────────────────────────────
+
+function ClassroomRow({ classroom, totalStudents }: { classroom: Classroom; totalStudents: number }) {
+  const courses = useClassroomStore((s) => s.courses);
+  const myCourses = courses.filter((c) => c.classroomId === classroom.id);
+  const share = totalStudents > 0 ? (classroom.studentsCount / totalStudents) * 100 : 0;
+  const revenue = classroom.studentsCount * 990;
+
+  return (
+    <View style={cr.row}>
+      <View style={cr.thumb}>
+        {classroom.thumbnail
+          ? <Image source={{ uri: classroom.thumbnail }} style={cr.thumbImg} />
+          : <GraduationCap size={16} color={Colors.text.disabled} weight="regular" />}
+      </View>
+      <View style={cr.info}>
+        <View style={cr.nameRow}>
+          <Text style={cr.name} numberOfLines={1}>{classroom.name}</Text>
+          <Text style={cr.revenue}>₽{(revenue / 1000).toFixed(0)}K</Text>
+        </View>
+        <View style={cr.metaRow}>
+          <Text style={cr.meta}>{classroom.studentsCount} студ. · {myCourses.length} курс.</Text>
+          <Text style={cr.share}>{share.toFixed(0)}%</Text>
+        </View>
+        <View style={cr.track}>
+          <View style={[cr.fill, { width: `${share}%` }]} />
+        </View>
+      </View>
+      <View style={cr.actions}>
+        <TouchableOpacity style={cr.btn} onPress={() => router.push(`/classroom/${classroom.id}/manage` as any)}>
+          <PencilSimple size={13} color={GREEN} weight="regular" />
+        </TouchableOpacity>
+        <TouchableOpacity style={cr.btn} onPress={() => router.push(`/classroom/${classroom.id}` as any)}>
+          <Eye size={13} color={Colors.text.secondary} weight="regular" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const cr = StyleSheet.create({
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 16, paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E2E8F0',
+  },
+  thumb: {
+    width: 36, height: 36, borderRadius: BorderRadius.sm,
+    backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden', flexShrink: 0,
+  },
+  thumbImg: { width: '100%', height: '100%' },
+  info: { flex: 1, gap: 3 },
+  nameRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  name: { fontSize: 13, fontWeight: '600', color: Colors.text.primary, flex: 1 },
+  revenue: { fontSize: 13, fontWeight: '700', color: GREEN },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  meta: { fontSize: 11, color: Colors.text.disabled },
+  share: { fontSize: 11, color: Colors.text.disabled },
+  track: { height: 3, backgroundColor: '#E2E8F0', borderRadius: 2, overflow: 'hidden', marginTop: 2 },
+  fill: { height: '100%', backgroundColor: GREEN_MID, borderRadius: 2 },
+  actions: { flexDirection: 'row', gap: 4 },
+  btn: {
+    width: 28, height: 28, borderRadius: BorderRadius.sm,
+    backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0',
+    alignItems: 'center', justifyContent: 'center',
+  },
+});
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardScreen() {
   const classrooms = useClassroomStore((s) => s.classrooms);
   const courses = useClassroomStore((s) => s.courses);
   const lessons = useClassroomStore((s) => s.lessons);
+  const user = useAuthStore((s) => s.user);
 
-  const myClassrooms = classrooms.filter((c) => c.instructor.id === currentUser.id);
+  const myClassrooms = classrooms.filter((c) =>
+    c.createdBy === user?.id || c.instructor?.id === user?.id
+  );
   const totalStudents = myClassrooms.reduce((sum, c) => sum + c.studentsCount, 0);
   const totalCourses = courses.filter((c) => myClassrooms.some((cl) => cl.id === c.classroomId)).length;
   const totalLessons = lessons.filter((l) =>
     courses.filter((c) => myClassrooms.some((cl) => cl.id === c.classroomId)).some((c) => c.id === l.courseId)
   ).length;
 
+  const totalRevenue = totalStudents * 990;
+  const prevRevenue = Math.round(totalRevenue * 0.78);
+  const revGrowth = prevRevenue > 0 ? Math.round(((totalRevenue - prevRevenue) / prevRevenue) * 100) : 0;
+
+  const periodLabel = new Date().toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Дашборд</Text>
-        <Text style={styles.period}>Март 2026</Text>
+    <SafeAreaView style={s.container} edges={['top']}>
+
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <ArrowLeft size={20} color={Colors.text.primary} weight="regular" />
+        </TouchableOpacity>
+        <View style={s.headerText}>
+          <Text style={s.headerTitle}>Аналитика</Text>
+          <Text style={s.headerSub}>{periodLabel}</Text>
+        </View>
+        <TouchableOpacity style={s.createBtn} onPress={() => router.push('/classroom/create' as any)}>
+          <PlusCircle size={18} color="#fff" weight="fill" />
+          <Text style={s.createBtnText}>Создать</Text>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
 
-        {/* Revenue card */}
-        <View style={styles.revenueCard}>
-          <View style={styles.revenueTop}>
-            <View>
-              <Text style={styles.revenueLabel}>Выручка за месяц</Text>
-              <Text style={styles.revenueValue}>₽ 112 000</Text>
-            </View>
-            <View style={styles.revenueBadge}>
-              <TrendUp size={13} color={Colors.success} weight="regular" />
-              <Text style={styles.revenueBadgeText}>+51%</Text>
-            </View>
-          </View>
-          <View style={styles.chart}>
-            {REVENUE_DATA.map((d) => (
-              <View key={d.month} style={styles.chartCol}>
-                <View style={styles.barWrap}>
-                  <View
-                    style={[
-                      styles.bar,
-                      {
-                        height: `${Math.round((d.value / MAX_VALUE) * 100)}%`,
-                        backgroundColor: d.month === 'Мар' ? Colors.primary : Colors.surfaceSecondary,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.barLabel}>{d.month}</Text>
-              </View>
-            ))}
-          </View>
+        <GoalCard totalStudents={totalStudents} goal={500} />
+
+        <View style={s.row}>
+          <MetricCard
+            label="Выручка" sub="За текущий месяц"
+            value={`₽${fmt(totalRevenue)}`}
+            trend={`+${revGrowth}%`} trendUp={revGrowth >= 0}
+          />
+          <MetricCard
+            label="Студенты" sub="Всего записей"
+            value={fmt(totalStudents)} unit="чел."
+            trend="+12%" trendUp
+          />
         </View>
 
-        {/* Metrics grid */}
-        <View style={styles.grid}>
-          {[
-            { Icon: Users, label: 'Студентов', value: totalStudents.toLocaleString(), sub: '+124 за месяц', color: Colors.primary },
-            { Icon: GraduationCap, label: 'Классов', value: String(myClassrooms.length), color: Colors.primary },
-            { Icon: Book, label: 'Курсов', value: String(totalCourses), color: '#8B5CF6' },
-            { Icon: PlayCircle, label: 'Уроков', value: String(totalLessons), color: '#F59E0B' },
-          ].map((m) => (
-            <View key={m.label} style={styles.metricCard}>
-              <View style={[styles.metricIcon, { backgroundColor: m.color + '18' }]}>
-                <m.Icon size={18} color={m.color} weight="regular" />
-              </View>
-              <Text style={styles.metricValue}>{m.value}</Text>
-              <Text style={styles.metricLabel}>{m.label}</Text>
-              {m.sub && <Text style={styles.metricSub}>{m.sub}</Text>}
-            </View>
-          ))}
-        </View>
-
-        {/* Sales breakdown */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Продажи по классам</Text>
-          <View style={styles.tableCard}>
-            {myClassrooms.length === 0 ? (
-              <View style={styles.tableEmpty}>
-                <Text style={styles.tableEmptyText}>Нет классных комнат</Text>
-              </View>
-            ) : (
-              myClassrooms.map((c, i) => {
-                const share = totalStudents > 0 ? (c.studentsCount / totalStudents) * 100 : 0;
-                const revenue = c.studentsCount * 990;
-                return (
-                  <View key={c.id} style={[styles.tableRow, i < myClassrooms.length - 1 && styles.tableRowBorder]}>
-                    <View style={styles.tableLeft}>
-                      <Text style={styles.tableName} numberOfLines={1}>{c.name}</Text>
-                      <View style={styles.progressBar}>
-                        <View style={[styles.progressFill, { width: `${share}%` }]} />
-                      </View>
-                    </View>
-                    <View style={styles.tableRight}>
-                      <Text style={styles.tableStudents}>{c.studentsCount} уч.</Text>
-                      <Text style={styles.tableRevenue}>₽{(revenue / 1000).toFixed(0)}K</Text>
-                    </View>
-                  </View>
-                );
-              })
-            )}
-          </View>
+        <View style={s.row}>
+          <MetricCard
+            label="Курсы" sub="Активных курсов"
+            value={String(totalCourses)}
+            trend={totalCourses > 0 ? '+1 новый' : '—'} trendUp={totalCourses > 0}
+          />
+          <MetricCard
+            label="Уроки" sub="Всего уроков"
+            value={String(totalLessons)}
+            trend={totalLessons > 0 ? 'Опубликовано' : '—'} trendUp={totalLessons > 0}
+          />
         </View>
 
         {/* Activity */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Активность</Text>
-          <View style={styles.tableCard}>
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>Активность студентов</Text>
+          <View style={s.tableCard}>
             {[
-              { label: 'Завершили хотя бы 1 урок', value: '68%', color: Colors.success },
-              { label: 'Завершили курс полностью', value: '34%', color: Colors.primary },
-              { label: 'Прошли тест', value: '51%', color: '#8B5CF6' },
-              { label: 'Средняя оценка теста', value: '78 / 100', color: Colors.warning },
+              { label: 'Завершили хотя бы 1 урок', value: '68%', fill: 68 },
+              { label: 'Прошли курс полностью',    value: '34%', fill: 34 },
+              { label: 'Сдали тест',               value: '51%', fill: 51 },
+              { label: 'Средний балл теста',        value: '78 / 100', fill: 78 },
             ].map((item, i, arr) => (
-              <View key={item.label} style={[styles.tableRow, i < arr.length - 1 && styles.tableRowBorder]}>
-                <Text style={styles.activityLabel}>{item.label}</Text>
-                <Text style={[styles.activityValue, { color: item.color }]}>{item.value}</Text>
+              <View key={item.label} style={[s.actRow, i === arr.length - 1 && { borderBottomWidth: 0 }]}>
+                <View style={s.actLeft}>
+                  <Text style={s.actLabel}>{item.label}</Text>
+                  <View style={s.actTrack}>
+                    <View style={[s.actFill, { width: `${item.fill}%` }]} />
+                  </View>
+                </View>
+                <Text style={[s.actValue, { color: GREEN }]}>{item.value}</Text>
               </View>
             ))}
           </View>
         </View>
 
-        {/* My classrooms */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Мои классные комнаты</Text>
+        {/* Classrooms */}
+        <View style={s.section}>
+          <View style={s.sectionHeaderRow}>
+            <Text style={s.sectionTitle}>Продажи по классам</Text>
             <TouchableOpacity onPress={() => router.push('/classroom/create' as any)}>
-              <Text style={styles.sectionAction}>+ Создать</Text>
+              <Text style={s.sectionAction}>+ Создать</Text>
             </TouchableOpacity>
           </View>
-
-          {myClassrooms.length === 0 ? (
-            <TouchableOpacity
-              style={styles.emptyCard}
-              onPress={() => router.push('/classroom/create' as any)}
-            >
-              <PlusCircle size={36} color={Colors.text.disabled} weight="regular" />
-              <Text style={styles.emptyTitle}>Создайте первую классную комнату</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.classroomList}>
-              {myClassrooms.map((classroom) => (
-                <ClassroomManageCard key={classroom.id} classroom={classroom} />
-              ))}
-            </View>
-          )}
+          <View style={s.tableCard}>
+            {myClassrooms.length === 0 ? (
+              <View style={s.emptyWrap}>
+                <PlusCircle size={32} color={Colors.text.disabled} weight="regular" />
+                <Text style={s.emptyText}>Создайте первую классную комнату</Text>
+              </View>
+            ) : (
+              myClassrooms.map((c) => (
+                <ClassroomRow key={c.id} classroom={c} totalStudents={totalStudents} />
+              ))
+            )}
+          </View>
         </View>
 
         <View style={{ height: Spacing.xl }} />
@@ -294,117 +303,47 @@ export default function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 14,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: CARD_PAD, paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E2E8F0',
   },
-  title: { ...Typography.h2, color: Colors.text.primary },
-  period: { ...Typography.caption, color: Colors.text.secondary },
-  content: { padding: Spacing.md, gap: Spacing.md },
-
-  // Revenue
-  revenueCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.md,
-    gap: Spacing.md,
+  backBtn: {
+    width: 34, height: 34, borderRadius: 17,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F9',
   },
-  revenueTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  revenueLabel: { ...Typography.caption, color: Colors.text.secondary },
-  revenueValue: { ...Typography.h1, color: Colors.text.primary, marginTop: 2 },
-  revenueBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.successSurface,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.full,
+  headerText: { flex: 1 },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.text.primary },
+  headerSub: { fontSize: 12, color: Colors.text.disabled, marginTop: 1 },
+  createBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: GREEN, paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: BorderRadius.md,
   },
-  revenueBadgeText: { fontSize: 12, fontWeight: '700', color: Colors.success },
-  chart: { flexDirection: 'row', alignItems: 'flex-end', height: 72, gap: 6 },
-  chartCol: { flex: 1, alignItems: 'center', height: '100%', gap: 4 },
-  barWrap: { flex: 1, width: '100%', justifyContent: 'flex-end' },
-  bar: { width: '100%', borderRadius: 4, minHeight: 4 },
-  barLabel: { fontSize: 10, color: Colors.text.disabled, fontWeight: '500' },
-
-  // Metrics
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  metricCard: {
-    flex: 1,
-    minWidth: '47%',
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.md,
-    gap: 3,
-  },
-  metricIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: BorderRadius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
-  },
-  metricValue: { ...Typography.h2, color: Colors.text.primary },
-  metricLabel: { ...Typography.caption, color: Colors.text.secondary },
-  metricSub: { fontSize: 11, color: Colors.success, fontWeight: '600' },
-
-  // Table
-  section: { gap: Spacing.sm },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { ...Typography.h3, color: Colors.text.primary },
-  sectionAction: { ...Typography.caption, fontWeight: '600', color: Colors.primary },
+  createBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  content: { padding: CARD_PAD, gap: Spacing.sm },
+  row: { flexDirection: 'row', gap: Spacing.sm },
+  section: { gap: 8 },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.text.primary },
+  sectionAction: { fontSize: 13, fontWeight: '600', color: GREEN },
   tableCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
+    backgroundColor: '#fff', borderRadius: BorderRadius.lg,
+    borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden',
   },
-  tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 12,
-    gap: Spacing.md,
+  actRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 16, paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E2E8F0',
   },
-  tableRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
-  tableLeft: { flex: 1, gap: 6 },
-  tableName: { ...Typography.body, fontWeight: '500', color: Colors.text.primary },
-  progressBar: { height: 4, backgroundColor: Colors.surfaceSecondary, borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 2 },
-  tableRight: { alignItems: 'flex-end', gap: 2 },
-  tableStudents: { ...Typography.caption, color: Colors.text.secondary },
-  tableRevenue: { ...Typography.body, fontWeight: '600', color: Colors.text.primary },
-  tableEmpty: { padding: Spacing.lg, alignItems: 'center' },
-  tableEmptyText: { ...Typography.body, color: Colors.text.secondary },
-  activityLabel: { ...Typography.body, color: Colors.text.primary, flex: 1 },
-  activityValue: { ...Typography.body, fontWeight: '700' },
-
-  // Classrooms
-  classroomList: { gap: Spacing.sm },
-  emptyCard: {
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderStyle: 'dashed',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
-    alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.surface,
-  },
-  emptyTitle: { ...Typography.body, fontWeight: '600', color: Colors.text.primary },
+  actLeft: { flex: 1, gap: 5 },
+  actLabel: { fontSize: 13, color: Colors.text.primary },
+  actTrack: { height: 3, backgroundColor: '#E2E8F0', borderRadius: 2, overflow: 'hidden' },
+  actFill: { height: '100%', backgroundColor: GREEN, borderRadius: 2 },
+  actValue: { fontSize: 13, fontWeight: '700', minWidth: 64, textAlign: 'right' },
+  emptyWrap: { padding: Spacing.xl, alignItems: 'center', gap: 8 },
+  emptyText: { fontSize: 14, fontWeight: '500', color: Colors.text.secondary, textAlign: 'center' },
 });

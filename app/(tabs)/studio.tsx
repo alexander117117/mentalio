@@ -2,7 +2,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChartBar, TrendUp, TrendDown, GraduationCap, Users, Book, Gear, Eye, Plus } from 'phosphor-react-native';
+import { TrendUp, TrendDown, GraduationCap, Users, Book, Gear, Eye, Plus } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import Svg, { Circle, Defs, LinearGradient, Stop, Path, Text as SvgText } from 'react-native-svg';
@@ -540,19 +540,6 @@ export default function StudioScreen() {
 
       <View style={styles.sheet}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
-
-          {isInstructor && myClassrooms.length > 0 && (
-            <RevenueDashboard myClassrooms={myClassrooms} />
-          )}
-
-          {isInstructor && myClassrooms.length === 0 && (
-            <View style={styles.instructorHint}>
-              <ChartBar size={20} color="#8B5CF6" weight="regular" />
-              <Text style={styles.instructorHintText}>
-                Создайте первый курс, чтобы начать получать аналитику доходов
-              </Text>
-            </View>
-          )}
 
           {myClassrooms.length === 0 ? (
             <View style={styles.empty}>
